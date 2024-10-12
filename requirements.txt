@@ -1,0 +1,3 @@
+# Must be same as in the manifest
+psutil-home-assistant>=0.0.1
+psutil>=6.0.0,<7.0.0

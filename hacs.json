@@ -1,0 +1,7 @@
+{
+    "name": "Remote SystemMonitor",
+    "homeassistant": "2024.10.0",
+    "render_readme": true,
+    "zip_release": true,
+    "filename": "remote_systemmonitor.zip"
+}
