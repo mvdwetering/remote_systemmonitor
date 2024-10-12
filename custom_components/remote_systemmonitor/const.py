@@ -1,6 +1,6 @@
 """Constants for System Monitor."""
 
-DOMAIN = "systemmonitor"
+DOMAIN = "remote_systemmonitor"
 
 CONF_INDEX = "index"
 CONF_PROCESS = "process"
