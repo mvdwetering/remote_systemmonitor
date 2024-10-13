@@ -8,7 +8,7 @@ import asyncio
 import logging
 
 from server import async_setup_entry
-from server.dummy_hass import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
+from server.hass_stubs import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
 
 
 

@@ -5,7 +5,7 @@ import importlib.util  # It is here to load for ha_psutil which seems to be miss
 import logging
 
 from server.coordinator import SystemMonitorCoordinator
-from server.dummy_hass import ConfigEntry, HomeAssistant
+from server.hass_stubs import ConfigEntry, HomeAssistant
 from server.util import get_all_disk_mounts
 import psutil_home_assistant as ha_psutil
 

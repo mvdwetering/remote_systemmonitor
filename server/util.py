@@ -7,7 +7,7 @@ from psutil._common import shwtemp
 import psutil_home_assistant as ha_psutil
 
 from .const import CPU_SENSOR_PREFIXES
-from .dummy_hass import HomeAssistant
+from .hass_stubs import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 

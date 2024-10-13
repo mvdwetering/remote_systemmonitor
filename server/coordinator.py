@@ -5,17 +5,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 import logging
-import os
 from typing import Any, NamedTuple
 
 from psutil import Process
 from psutil._common import sdiskusage, shwtemp, snetio, snicaddr, sswap
 import psutil_home_assistant as ha_psutil
 
-from .dummy_hass import HomeAssistant
-from .dummy_hass import DEFAULT_SCAN_INTERVAL
-from .dummy_hass import TimestampDataUpdateCoordinator
-from .dummy_hass import dt as dt_util
+from .hass_stubs import HomeAssistant
+from .hass_stubs import DEFAULT_SCAN_INTERVAL
+from .hass_stubs import TimestampDataUpdateCoordinator
+from .hass_stubs import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
