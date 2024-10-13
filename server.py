@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 
 from server import async_setup_entry
@@ -28,7 +29,7 @@ async def main(args):
 
     while True:
         new_data = await entry.runtime_data.coordinator._async_update_data()
-        print(new_data)
+        print(json.dumps(new_data.as_dict(), indent=2))
 
         await asyncio.sleep(DEFAULT_SCAN_INTERVAL)
 
