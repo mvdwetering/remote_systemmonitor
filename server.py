@@ -19,6 +19,13 @@ async def main(args):
     await async_setup_entry(hass, entry)
 
     assert entry.runtime_data is not None
+
+    # Subscribe all disks for updates
+    disk_arguments = entry.runtime_data.coordinator._arguments
+    for disk_argument in disk_arguments:
+        entry.runtime_data.coordinator.update_subscribers[("disks", disk_argument)] = "dummy"  # Would normally be entity_id
+
+
     while True:
         new_data = await entry.runtime_data.coordinator._async_update_data()
         print(new_data)

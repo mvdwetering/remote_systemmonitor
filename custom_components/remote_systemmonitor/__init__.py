@@ -12,7 +12,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .coordinator import SystemMonitorCoordinator
-from .util import get_all_disk_mounts
+from ...server.util import get_all_disk_mounts
 
 _LOGGER = logging.getLogger(__name__)
 
