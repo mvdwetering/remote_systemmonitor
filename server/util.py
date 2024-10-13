@@ -6,9 +6,8 @@ import os
 from psutil._common import shwtemp
 import psutil_home_assistant as ha_psutil
 
-from homeassistant.core import HomeAssistant
-
 from .const import CPU_SENSOR_PREFIXES
+from .dummy_hass import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
