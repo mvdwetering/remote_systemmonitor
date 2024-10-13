@@ -131,7 +131,7 @@ class SystemMonitorCoordinator(TimestampDataUpdateCoordinator[SensorData]):
 
         load: tuple = (None, None, None)
         if self.update_subscribers[("load", "")] or self._initial_update:
-            load = os.getloadavg()
+            load = self._psutil.getloadavg()  # This used `os.getloadavg` before, but that does not exist on Windows
             _LOGGER.debug("Load: %s", load)
 
         cpu_percent: float | None = None
