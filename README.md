@@ -1,6 +1,8 @@
 # REMOTE SYSTEMMONITOR
 
-This is basically a duplicate of the [Home Assistant SystemMonitor integration](https://www.home-assistant.io/integrations/systemmonitor/), but it can get data from a remote system.
+> This is still work in progress
+
+This is basically a the [Home Assistant SystemMonitor integration](https://www.home-assistant.io/integrations/systemmonitor/), but split off the data collectin part so it can get data from a remote system.
 
 Just monitoring, nothing else.
 
