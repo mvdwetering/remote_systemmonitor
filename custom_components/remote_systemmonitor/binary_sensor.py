@@ -134,8 +134,8 @@ class SystemMonitorSensor(
         self._attr_device_info = DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
             identifiers={(DOMAIN, entry_id)},
-            manufacturer="System Monitor",
-            name="System Monitor",
+            # manufacturer="System Monitor",
+            # name="System Monitor",
         )
         self.argument = argument
 
