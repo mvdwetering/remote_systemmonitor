@@ -90,8 +90,8 @@ class SystemMonitorCoordinator(TimestampDataUpdateCoordinator[SensorData]):
         super().__init__(
             hass,
             _LOGGER,
-            name="System Monitor update coordinator",
-            update_interval=DEFAULT_SCAN_INTERVAL,
+            name="Remote System Monitor update coordinator",
+            # update_interval=DEFAULT_SCAN_INTERVAL,
             always_update=False,
         )
         self._psutil = psutil_wrapper.psutil
