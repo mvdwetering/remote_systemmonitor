@@ -36,7 +36,7 @@ async def websocket_handler(websocket):
         # await websocket.wait_closed()        
         await asyncio.gather(
             consumer_handler(websocket),
-            producer_handler(websocket),
+            # producer_handler(websocket),
         )
     finally:
         CONNECTIONS.remove(websocket)
@@ -54,13 +54,21 @@ async def main(args):
     for disk_argument in disk_arguments:
         entry.runtime_data.coordinator.update_subscribers[("disks", disk_argument)] = "dummy"  # Would normally be entity_id
 
-    async with serve(websocket_handler, "localhost", 8765):
+    async with serve(websocket_handler, "localhost", 2604):
         while True:
             new_data = await entry.runtime_data.coordinator._async_update_data()
             new_data = new_data.as_dict()
 
-            print(json.dumps(new_data, indent=2))
-            broadcast(CONNECTIONS, json.dumps(new_data))
+            notification = {
+                "jsonrpc": "2.0",
+                "method": "update_data",
+                "params": {
+                    "data": new_data
+                },
+            }
+
+            print(json.dumps(notification, indent=2))
+            broadcast(CONNECTIONS, json.dumps(notification))
 
             await asyncio.sleep(DEFAULT_SCAN_INTERVAL)
 
