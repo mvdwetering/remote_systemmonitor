@@ -19,8 +19,10 @@ class RemoteSystemMonitorApi:
     def __init__(self, host: str, port: int = DEFAULT_PORT, on_new_data=None) -> None:
         self.host = host
         self.port = port
-        self._on_new_data = on_new_data
+        self.on_new_data = on_new_data
+        self._connection: ClientConnection | None = None
         self._receive_task: asyncio.Task | None = None
+        self._last_data: dict | None = None
 
 
     async def connect(self):
@@ -46,7 +48,9 @@ class RemoteSystemMonitorApi:
                     if jsonrpc_message["method"] != "update_data":
                         raise Exception("Unsupported JSON-RPC method")
                     
-                    await self._on_new_data(jsonrpc_message["params"]["data"])
+                    self._last_data = jsonrpc_message["params"]["data"]
+                    if self.on_new_data:
+                        await self.on_new_data(self._last_data)
                 except json.JSONDecodeError:
                     logging.warning(f"Invalid message: {message}")
                     pass
