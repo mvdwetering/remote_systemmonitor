@@ -76,8 +76,12 @@ class RemoteSystemMonitorApi:
 
 async def main(args):
 
+    data_received  =False
+
     async def on_new_data(data):
+        nonlocal data_received
         print(f"### THE DATA ### -- {data}")
+        data_received = True
 
     api = RemoteSystemMonitorApi(args.host, args.port, on_new_data=on_new_data)
     await api.connect()
@@ -85,6 +89,9 @@ async def main(args):
     while True:
         await asyncio.sleep(5)
         print(".")
+        if data_received:
+            await api.disconnect()
+            return
 
 
 if __name__ == "__main__":
