@@ -16,7 +16,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from .server_api import RemoteSystemMonitorApi
 
 from .coordinator import SystemMonitorCoordinator
-from .util import get_all_disk_mounts
+# from .util import get_all_disk_mounts
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ async def async_setup_entry(
 
     async def on_new_data(data):
         _LOGGER.debug("on_new_data: %s", data)
-        await coordinator.async_set_updated_data(data)
+        coordinator.async_set_updated_data(data)
 
     server_api.on_new_data = on_new_data
 
