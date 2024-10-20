@@ -12,6 +12,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.const import (
+    CONF_HOST,
+)
 
 from .server_api import RemoteSystemMonitorApi
 
@@ -56,6 +59,7 @@ async def async_setup_entry(
     # _LOGGER.debug("disk arguments to be added: %s", disk_arguments)
 
     server_api = RemoteSystemMonitorApi("127.0.0.1")
+    server_api = RemoteSystemMonitorApi(entry.data[CONF_HOST])
     try:
         await server_api.connect()
         # Make sure there has been an update

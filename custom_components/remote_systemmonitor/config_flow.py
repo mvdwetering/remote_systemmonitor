@@ -4,16 +4,19 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
+import logging
 
 import voluptuous as vol
 
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR_DOMAIN
 from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow
+
 from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.schema_config_entry_flow import (
     SchemaCommonFlowHandler,
-    SchemaConfigFlowHandler,
+    SchemaOptionsFlowHandler,
     SchemaFlowFormStep,
 )
 from homeassistant.helpers.selector import (
@@ -22,9 +25,25 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 from homeassistant.util import slugify
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_PORT,
+)
+
+from .server_api import RemoteSystemMonitorApi
+
+
 
 from .const import CONF_PROCESS, DOMAIN
 from .util import get_all_running_processes
+
+_LOGGER = logging.getLogger(__name__)
+
+USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST): str,
+    }
+)
 
 
 async def validate_sensor_setup(
@@ -78,9 +97,9 @@ async def get_suggested_value(handler: SchemaCommonFlowHandler) -> dict[str, Any
     return {CONF_PROCESS: processes}
 
 
-CONFIG_FLOW = {
-    "user": SchemaFlowFormStep(schema=vol.Schema({})),
-}
+# CONFIG_FLOW = {
+#     "user": SchemaFlowFormStep(schema=vol.Schema({})),
+# }
 OPTIONS_FLOW = {
     "init": SchemaFlowFormStep(
         get_sensor_setup_schema,
@@ -89,24 +108,81 @@ OPTIONS_FLOW = {
     )
 }
 
+async def validate_input(data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Validate the user input allows us to connect.
+    Data has the keys from USER_DATA_SCHEMA with values provided by the user.
+    """
+    print("validate_input", data[CONF_HOST])
+    server_api = RemoteSystemMonitorApi(data[CONF_HOST])
+    try:
+        await server_api.connect()
+        # TODO: Get machine data like name
+    # TODO: Handle exceptions from server_api like UnableToConnect and Unauthorized
+    # except aioytmdesktopapi.Unauthorized:
+    #     raise InvalidAuth
+    # except aioytmdesktopapi.RequestError:
+    #     raise CannotConnect
+    finally:
+        await server_api.disconnect()
 
-class SystemMonitorConfigFlowHandler(SchemaConfigFlowHandler, domain=DOMAIN):
+    # Return info that you want to store in the config entry.
+    return {"title": f"Remote System Monitor ({ data[CONF_HOST]})"}
+
+
+class SystemMonitorConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for System Monitor."""
 
-    config_flow = CONFIG_FLOW
-    options_flow = OPTIONS_FLOW
     VERSION = 1
     MINOR_VERSION = 3
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> SchemaOptionsFlowHandler:
+        """Get the options flow for this handler."""
+        return SchemaOptionsFlowHandler(config_entry, OPTIONS_FLOW)
 
     def async_config_entry_title(self, options: Mapping[str, Any]) -> str:
         """Return config entry title."""
         return "System Monitor"
 
-    @callback
-    def async_create_entry(
-        self, data: Mapping[str, Any], **kwargs: Any
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Finish config flow and create a config entry."""
-        if self._async_current_entries():
-            return self.async_abort(reason="already_configured")
-        return super().async_create_entry(data, **kwargs)
+        """Handle the initial step."""
+        _LOGGER.debug("async_step_user, %s", user_input)
+
+        if user_input is None:
+            return self.async_show_form(
+                step_id="user",
+                data_schema=USER_DATA_SCHEMA,
+            )
+
+        errors = {}
+
+        try:
+            info = await validate_input(user_input)
+        # TODO: Better exceptions and handling
+        # except CannotConnect:
+        #     errors["base"] = "cannot_connect"
+        # except InvalidAuth:
+        #     errors["base"] = "invalid_auth"
+        except Exception:  # pylint: disable=broad-except
+            _LOGGER.exception("Unexpected exception")
+            errors["base"] = "cannot_connect"
+            # errors["base"] = "unknown"
+        else:
+            # TODO: Protect against setting up the same remote host multiple times.
+            #       Needs some kind of unique ID from remote host
+            print(f"self.async_create_entry(title={info["title"]}, data={user_input})")
+            return self.async_create_entry(title=info["title"], data=user_input)
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(
+                USER_DATA_SCHEMA, user_input
+            ),
+            errors=errors,
+        )
