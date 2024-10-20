@@ -44,6 +44,13 @@ class RemoteSystemMonitorApi:
             try:
                 message = await self._connection.receive()
                 logging.debug(f"_receiver -- {message.type}")
+                # TODO: Handle more message types?
+                # CLOSING = 0x100
+                # CLOSED = 0x101
+                # ERROR = 0x102
+
+                if message.type == aiohttp.WSMsgType.CLOSED:
+                    return
                 if message.type == aiohttp.WSMsgType.TEXT:
                     logging.debug(f"_receiver -- {message}")
 
