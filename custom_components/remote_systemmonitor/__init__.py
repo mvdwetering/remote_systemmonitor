@@ -62,12 +62,10 @@ async def async_setup_entry(
         # TODO: Improve, just get the data
         await asyncio.sleep(16)
     except Exception as err:
-        raise ConfigEntryNotReady(err) from err
-    finally:
         await server_api.disconnect()
+        raise ConfigEntryNotReady(err) from err
 
     initial_data = server_api._last_data
-    print(initial_data)
     disk_arguments = initial_data["disk_usage"].keys()
 
     coordinator: SystemMonitorCoordinator = SystemMonitorCoordinator(
