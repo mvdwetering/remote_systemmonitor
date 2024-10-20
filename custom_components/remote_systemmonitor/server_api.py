@@ -8,10 +8,7 @@ import asyncio
 import json
 import logging
 
-import websockets.asyncio
-from websockets.asyncio.client import ClientConnection
-import websockets
-
+import aiohttp
 
 DEFAULT_PORT = 2604
 
@@ -20,43 +17,53 @@ class RemoteSystemMonitorApi:
         self.host = host
         self.port = port
         self.on_new_data = on_new_data
-        self._connection: ClientConnection | None = None
+        self._clientsession: aiohttp.ClientSession | None = None
+        self._connection: aiohttp.ClientWebSocketResponse | None = None
         self._receive_task: asyncio.Task | None = None
         self._last_data: dict | None = None
 
 
     async def connect(self):
         uri = f"ws://{self.host}:{self.port}"
-        self._connection: ClientConnection = await websockets.asyncio.client.connect(uri)
+        self._clientsession = aiohttp.ClientSession()
+        self._connection = await self._clientsession.ws_connect(uri)
         self._receive_task = asyncio.create_task(self._receiver())
+        logging.debug("Connected")
 
 
     async def disconnect(self):
+        logging.debug("Disconnect")
         if self._connection:
             await self._connection.close()
+        if self._clientsession:
+            await self._clientsession.close()
 
     async def _receiver(self) -> None:
+        assert self._connection is not None
         while True:
             try:
-                message = await self._connection.recv()
-                logging.debug(f"_receiver -- {message}")
+                message = await self._connection.receive()
+                logging.debug(f"_receiver -- {message.type}")
+                if message.type == aiohttp.WSMsgType.TEXT:
+                    logging.debug(f"_receiver -- {message}")
 
-                try:
-                    jsonrpc_message = json.loads(message)
-                    if jsonrpc_message.get("jsonrpc",None) != "2.0":
-                        raise Exception("Invalid/unsupported JSON-RPC data")
-                    if jsonrpc_message["method"] != "update_data":
-                        raise Exception("Unsupported JSON-RPC method")
-                    
-                    self._last_data = jsonrpc_message["params"]["data"]
-                    if self.on_new_data:
-                        await self.on_new_data(self._last_data)
-                except json.JSONDecodeError:
-                    logging.warning(f"Invalid message: {message}")
-                    pass
+                    try:
+                        jsonrpc_message = json.loads(message.data)
+                        if jsonrpc_message.get("jsonrpc",None) != "2.0":
+                            raise Exception("Invalid/unsupported JSON-RPC data")
+                        if jsonrpc_message["method"] != "update_data":
+                            raise Exception("Unsupported JSON-RPC method")
+                        
+                        self._last_data = jsonrpc_message["params"]["data"]
+                        if self.on_new_data:
+                            await self.on_new_data(self._last_data)
+                    except json.JSONDecodeError:
+                        logging.warning(f"Invalid message: {message}")
+                        pass
 
-            except websockets.ConnectionClosed:
-                logging.info("Connection closed")
+            except Exception as err:
+                logging.exception("Exception in websocket receiver")
+                # logging.info("Connection closed")
                 break
 
 

@@ -1,8 +1,10 @@
 # Must be same as in the manifest
 
 homeassistant-stubs==2024.10.0
-# Server api
-websockets>=13.1
+
+# Server api uses aiohttp iso websockets because of conflicts in HA
+# Probably with other integrations needed a newer version
+aiohttp>=3.10,<4
 
 # Server stuff
 psutil-home-assistant>=0.0.1
