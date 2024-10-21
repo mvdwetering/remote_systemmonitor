@@ -18,6 +18,41 @@ CONNECTIONS = set()
 async def consumer_handler(websocket):
     async for message in websocket:
         print(message)
+        try:
+            json_data = json.loads(message)
+            if json_data["method"] == "get_api_info":
+                response = {
+                    "jsonrpc": "2.0",
+                    "id": json_data["id"],
+                    "result": {
+                        "version": "0.0.1",
+                        "id": "RemoteSystemMonitorApi",
+                    }
+                }
+                await websocket.send(json.dumps(response))
+                continue
+
+            # Unhandled
+            response = {
+                "jsonrpc": "2.0",
+                "id": json_data["id"],
+                "error": {
+                    "code": -32601,
+                    "message": "Method not found",
+                }
+            }
+            await websocket.send(json.dumps(response))
+        except Exception:
+            response = {
+                "jsonrpc": "2.0",
+                "id": json_data["id"],
+                "result": {
+                    "code": -32600	,
+                    "message": "InvalidRequest",
+                }
+            }
+            await websocket.send(json.dumps(response))
+
 
 async def producer_handler(websocket):
     while True:
