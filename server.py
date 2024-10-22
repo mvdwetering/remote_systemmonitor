@@ -7,6 +7,7 @@ import argparse
 import asyncio
 import json
 import logging
+import platform
 
 from websockets.asyncio.server import broadcast, serve
 
@@ -27,6 +28,24 @@ async def consumer_handler(websocket):
                     "result": {
                         "version": "0.0.1",
                         "id": "RemoteSystemMonitorApi",
+                    }
+                }
+                await websocket.send(json.dumps(response))
+                continue
+
+            if json_data["method"] == "get_machine_info":
+                response = {
+                    "jsonrpc": "2.0",
+                    "id": json_data["id"],
+                    "result": {
+                        "os": platform.system(),
+                        "os_alias": platform.system_alias(platform.system(), platform.release(), platform.version()),
+                        "version": platform.version(),
+                        "release": platform.release(),
+                        "platform": platform.platform(),
+                        "hostname": platform.node(),
+                        "machine": platform.machine(),
+                        "processor": platform.processor(),
                     }
                 }
                 await websocket.send(json.dumps(response))

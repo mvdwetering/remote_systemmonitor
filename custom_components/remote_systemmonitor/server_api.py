@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from dataclasses import dataclass
 import json
 import logging
 from typing import Any, Callable, Coroutine
 import uuid
 
 import aiohttp
+from mashumaro.mixins.dict import DataClassDictMixin
 
 DEFAULT_PORT = 2604
 
@@ -74,9 +76,19 @@ class JsonRpcAioHttpWebsocketBackend:
                 return
 
 class JsonRpcResponseError:
-    def __init__(self, code:int, message:str) -> None:
+    def __init__(self, code:int, message:str, data=None) -> None:
         self.code = code
         self.message = message
+        self.data = None
+
+    def to_dict(self):
+        error = {
+            "code": self.code,
+            "message": self.message,
+        }
+        if self.data:
+            error["data"] = self.data
+        return error
 
 class JsonRpcResponse:
     def __init__(self, result=None, error:JsonRpcResponseError|None=None) -> None:
@@ -91,6 +103,7 @@ class JsonRpc:
         self._request_handlers: dict[str, Coroutine[Any, Any, JsonRpcResponse]] = {}
 
         self._request_tasks: set[asyncio.Task] = set()
+        self._notification_tasks: set[asyncio.Task] = set()
 
         backend.register_on_receive_handler(self._on_receive)
 
@@ -109,6 +122,14 @@ class JsonRpc:
 
     async def disconnect(self):
         await self._backend.disconnect()
+        for task in self._request_tasks:
+            task.cancel()
+        for task in self._notification_tasks:
+            task.cancel()
+
+        # TODO: Is it needed to wait after they have been cancelled?
+        await asyncio.gather(*self._request_tasks, return_exceptions=True)
+        await asyncio.gather(*self._notification_tasks, return_exceptions=True)
 
 
     async def call_method(self, method:str, params:Any|None=None) -> JsonRpcResponse:
@@ -128,10 +149,21 @@ class JsonRpc:
         self._pending_method_calls[id] = pending_future
     
         await self._backend.send(json.dumps(message))
-
         await pending_future
 
         return pending_future.result()
+
+    async def send_notification(self, method:str, params:Any|None=None) -> None:
+        logging.debug("Call method: %s, params: %s", method, params)
+
+        message = {
+            "jsonrpc": "2.0",
+            "method": method,
+        }
+        if params:
+            message["params"] = params
+
+        await self._backend.send(json.dumps(message))
 
     async def _handle_request_task(self, id, request_handler, params):
         logging.debug("Handle request handler: %s", params)
@@ -145,43 +177,56 @@ class JsonRpc:
         if response.result is not None:
             message["result"] = response.result
         if response.error is not None:
-            message["error"] = response.error
+            message["error"] = response.error.to_dict()
 
         await self._backend.send(json.dumps(message))
+        if task := asyncio.current_task():
+            self._request_tasks.remove(task)
+
+    async def _handle_notification_task(self, notification_handler, params):
+        logging.debug("Handle notification handler: %s", params)
+        notification_handler(params)
 
     def _on_receive(self, inbound_message:str):
         logging.debug("On receive, message %s", inbound_message)
 
         try:
             message = json.loads(inbound_message)
-            if message["jsonrpc"] != "2.0":
+
+            if isinstance(message, list):
+                logging.error("BATCH request objects not supported yet. Message is ignored")
+                return
+
+            if message.get("jsonrpc", None) != "2.0":
                 raise Exception("Invalid JSON-RPC data")
 
-            id = message.get("id", None)
             method = message.get("method", None)
+            params = message.get("params", None) # TODO: Add more checking, params should be a dict or list
+            id = message.get("id", None)
             result = message.get("result", None)
             error = message.get("error", None)
 
             if method and id is None:
-                logging.debug("Notification message received")
+                logging.debug("Notification message received for method: %s", method)
                 if notification_handler := self._notification_handlers.get(method, None):
-                    notification_handler(message.get("params", None))
+                    notification_task = asyncio.create_task(self._handle_notification_task(notification_handler, params))
+                    self._notification_tasks.add(notification_task)
                 else:
                     logging.debug("No notification handler for method: %s", method)
                 return
 
             if method:
-                logging.debug("Request message received")
+                logging.debug("Request message received for method: %s", method)
                 if request_handler := self._request_handlers.get(method, None):
                     # NOTE: Requests handling is UNTESTED !!!
-                    request_task = asyncio.create_task(self._handle_request_task( id, request_handler, message.get("params", None)))
+                    request_task = asyncio.create_task(self._handle_request_task(id, request_handler, params))
                     self._request_tasks.add(request_task)
                 else:
                     logging.debug("No request handler for method: %s", message["method"])
                 return
 
-            if result or error:
-                logging.debug("Response message received")
+            if id and (result or error):
+                logging.debug("Response message received for id: %s", id)
                 if pending_method_handler := self._pending_method_calls.pop(id, None):
                     pending_method_handler.set_result(JsonRpcResponse(result, error))
                 else:
@@ -193,19 +238,23 @@ class JsonRpc:
         except json.JSONDecodeError:
             logging.warning(f"Invalid JSON message: {inbound_message}")
 
-class ApiInfo:
-    def __init__(self, version:str, id:str) -> None:
-        self.version = version
-        self.id = id
-        if id != "RemoteSystemMonitorApi":
-            raise Exception("Invalid API id: %s. This is not a RemoteSystemMonitorApi!", id)
+@dataclass
+class ApiInfo(DataClassDictMixin):
+    version:str
+    id:str
 
-    def __str__(self):
-        return f"Version: {self.version}"
+@dataclass
+class MachineInfo(DataClassDictMixin):
+    hostname:str
+    os:str
+    os_alias:str
+    version:str
+    release:str
+    platform:str
+    machine:str
+    processor:str
 
-    @staticmethod
-    def from_jsonrpc(result):
-        return ApiInfo(result["version"], result["id"])
+
 
 class RemoteSystemMonitorApi:
     def __init__(self, host: str, port: int = DEFAULT_PORT, on_new_data=None) -> None:
@@ -229,12 +278,23 @@ class RemoteSystemMonitorApi:
         await self._jsonrpc.disconnect()
 
     async def get_api_info(self) -> ApiInfo:
-        assert self._jsonrpc is not None
         response = await self._jsonrpc.call_method("get_api_info")
 
         if response.error is not None:
             raise Exception(f"Error: {response.error}")
-        return ApiInfo.from_jsonrpc(response.result)
+
+        api_info = ApiInfo.from_dict(response.result)
+        if api_info.id != "RemoteSystemMonitorApi":
+            raise Exception("Not a RemoteSystemMonitorApi")
+
+        return api_info
+
+    async def get_machine_info(self) -> MachineInfo:
+        response = await self._jsonrpc.call_method("get_machine_info")
+
+        if response.error is not None:
+            raise Exception(f"Error: {response.error}")
+        return MachineInfo.from_dict(response.result)
 
 
 async def main(args):
@@ -251,6 +311,11 @@ async def main(args):
 
     api_info = await api.get_api_info()
     print(api_info)
+    if api_info.version != "0.0.1":
+        raise Exception("Unsupported API version")
+
+    machine_info = await api.get_machine_info()
+    print(machine_info)
 
 
     while True:
