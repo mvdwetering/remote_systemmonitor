@@ -123,6 +123,7 @@ class JsonRpc:
         if params:
             message["params"] = params
 
+        # TODO: Add some kind of timeout?
         pending_future: asyncio.Future = asyncio.Future()
         self._pending_method_calls[id] = pending_future
     
@@ -157,15 +158,20 @@ class JsonRpc:
                 raise Exception("Invalid JSON-RPC data")
 
             id = message.get("id", None)
-            if id is None:
+            method = message.get("method", None)
+            result = message.get("result", None)
+            error = message.get("error", None)
+
+            if method and id is None:
                 logging.debug("Notification message received")
-                if notification_handler := self._notification_handlers.get(message["method"], None):
+                if notification_handler := self._notification_handlers.get(method, None):
                     notification_handler(message.get("params", None))
                 else:
-                    logging.debug("No notification handler for method: %s", message["method"])
+                    logging.debug("No notification handler for method: %s", method)
                 return
 
-            if method := message.get("method", None):
+            if method:
+                logging.debug("Request message received")
                 if request_handler := self._request_handlers.get(method, None):
                     # NOTE: Requests handling is UNTESTED !!!
                     request_task = asyncio.create_task(self._handle_request_task( id, request_handler, message.get("params", None)))
@@ -174,10 +180,8 @@ class JsonRpc:
                     logging.debug("No request handler for method: %s", message["method"])
                 return
 
-            result = message.get("result", None)
-            error = message.get("error", None)
-
             if result or error:
+                logging.debug("Response message received")
                 if pending_method_handler := self._pending_method_calls.pop(id, None):
                     pending_method_handler.set_result(JsonRpcResponse(result, error))
                 else:
@@ -188,7 +192,6 @@ class JsonRpc:
 
         except json.JSONDecodeError:
             logging.warning(f"Invalid JSON message: {inbound_message}")
-            return
 
 class ApiInfo:
     def __init__(self, version:str, id:str) -> None:
@@ -208,11 +211,7 @@ class RemoteSystemMonitorApi:
     def __init__(self, host: str, port: int = DEFAULT_PORT, on_new_data=None) -> None:
         self.host = host
         self.port = port
-        self.on_new_data = on_new_data
-        # self._clientsession: aiohttp.ClientSession | None = None
-        # self._websocket: aiohttp.ClientWebSocketResponse | None = None
-        # self._receive_task: asyncio.Task | None = None
-        # self._last_data: dict | None = None
+        self._on_update_data = on_new_data
 
         # TODO: Need to do something with disconnects/connection errors, probably on backend??
         self._backend = JsonRpcAioHttpWebsocketBackend()
@@ -221,20 +220,13 @@ class RemoteSystemMonitorApi:
     async def connect(self):
         uri = f"ws://{self.host}:{self.port}"
         await self._jsonrpc.connect(uri)
-        # self._clientsession = aiohttp.ClientSession()
-        # self._websocket = await self._clientsession.ws_connect(uri)
-        # self._receive_task = asyncio.create_task(self._receiver())
-        self._jsonrpc.register_notification_handler("update_data", self.on_new_data)
+        self._jsonrpc.register_notification_handler("update_data", self._on_update_data)
         logging.debug("Connected")
 
 
     async def disconnect(self):
         logging.debug("Disconnect")
-        await self._backend.disconnect()
-        # if self._websocket:
-        #     await self._websocket.close()
-        # if self._clientsession:
-        #     await self._clientsession.close()
+        await self._jsonrpc.disconnect()
 
     async def get_api_info(self) -> ApiInfo:
         assert self._jsonrpc is not None
