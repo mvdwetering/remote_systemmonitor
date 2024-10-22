@@ -108,7 +108,7 @@ async def main(args):
     for disk_argument in disk_arguments:
         entry.runtime_data.coordinator.update_subscribers[("disks", disk_argument)] = "dummy"  # Would normally be entity_id
 
-    async with serve(websocket_handler, "localhost", 2604):
+    async with serve(websocket_handler, "0.0.0.0", 2604):
         while True:
             new_data = await entry.runtime_data.coordinator._async_update_data()
             new_data = new_data.as_dict()
