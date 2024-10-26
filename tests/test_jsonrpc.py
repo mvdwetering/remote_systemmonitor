@@ -1,11 +1,10 @@
-import asyncio
 import json
 import logging
 from unittest.mock import Mock
 import pytest
 
-from jsonrpc import JsonRpc
-from jsonrpc.transports.dummy_transport import JsonRpcDummyTransport
+from myjsonrpc import JsonRpc
+from myjsonrpc.transports.dummy_transport import JsonRpcDummyTransport
 
 _LOGGER = logging.getLogger(__name__)
 
