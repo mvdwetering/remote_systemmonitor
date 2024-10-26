@@ -58,13 +58,17 @@ async def async_setup_entry(
 
     # _LOGGER.debug("disk arguments to be added: %s", disk_arguments)
 
-    server_api = RemoteSystemMonitorApi("127.0.0.1")
+    print(f"async_setup_entry RemoteSystemMonitorApi({entry.data[CONF_HOST]})")
     server_api = RemoteSystemMonitorApi(entry.data[CONF_HOST])
     try:
         await server_api.connect()
+        api_info = await server_api.get_api_info()
+        _LOGGER.debug("api_info: %s", api_info)
+
         # Make sure there has been an update
         # TODO: Improve, just get the data
         await asyncio.sleep(16)
+        print("After sleep first data received")
     except Exception as err:
         await server_api.disconnect()
         raise ConfigEntryNotReady(err) from err
@@ -81,7 +85,7 @@ async def async_setup_entry(
         _LOGGER.debug("on_new_data: %s", data)
         coordinator.async_set_updated_data(data)
 
-    server_api.on_new_data = on_new_data
+    server_api._on_update_data_notification = on_new_data
 
     # await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = SystemMonitorData(coordinator, psutil_wrapper, server_api)
