@@ -10,7 +10,12 @@ import logging
 
 from mashumaro.mixins.dict import DataClassDictMixin
 
-import jsonrpc
+# Some hackery to be able to use the "internal" package
+try:
+    from .jsonrpc import JsonRpcAioHttpWebsocketClientTransport, JsonRpc
+except ImportError:
+    from jsonrpc import JsonRpcAioHttpWebsocketClientTransport, JsonRpc
+
 
 DEFAULT_PORT = 2604
 
@@ -36,10 +41,12 @@ class RemoteSystemMonitorApi:
         self.host = host
         self.port = port
         self._on_new_data = on_new_data
+        # TODO: remove this
+        self._last_data = None
 
         # TODO: Need to do something with disconnects/connection errors, probably on backend??
-        self._backend = jsonrpc.JsonRpcAioHttpWebsocketClientTransport()
-        self._jsonrpc = jsonrpc.JsonRpc(self._backend)
+        self._backend = JsonRpcAioHttpWebsocketClientTransport()
+        self._jsonrpc = JsonRpc(self._backend)
         self._jsonrpc.register_notification_handler("update_data", self._on_update_data_notification)
 
     async def connect(self):
@@ -53,6 +60,7 @@ class RemoteSystemMonitorApi:
         await self._backend.disconnect()
 
     async def _on_update_data_notification(self, data) -> None:
+        self._last_data = data
         if self._on_new_data is not None: 
             await self._on_new_data(data)
 
