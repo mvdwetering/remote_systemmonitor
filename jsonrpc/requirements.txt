@@ -1,0 +1,7 @@
+mashumaro>=3.13,<4
+
+# Transports
+aiohttp>=3.10,<4
+
+# Testing
+pytest>=8
