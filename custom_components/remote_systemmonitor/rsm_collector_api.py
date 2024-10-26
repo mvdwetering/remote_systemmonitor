@@ -12,9 +12,11 @@ from mashumaro.mixins.dict import DataClassDictMixin
 
 # Some hackery to be able to use the "internal" package
 try:
-    from .myjsonrpc import JsonRpcAioHttpWebsocketClientTransport, JsonRpc
+    from .myjsonrpc import JsonRpc
+    from .myjsonrpc.transports.aiohttp_websocketclient_transport import JsonRpcAioHttpWebsocketClientTransport
 except ImportError:
-    from myjsonrpc import JsonRpcAioHttpWebsocketClientTransport, JsonRpc
+    from myjsonrpc import JsonRpc
+    from myjsonrpc.transports.aiohttp_websocketclient_transport import JsonRpcAioHttpWebsocketClientTransport
 
 
 DEFAULT_PORT = 2604

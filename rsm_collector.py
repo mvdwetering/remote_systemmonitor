@@ -13,7 +13,8 @@ from websockets.asyncio.server import broadcast, serve
 from rsm_collector import async_setup_entry
 from rsm_collector.hass_stubs import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
 
-from myjsonrpc import JsonRpcWebsocketsTransport, JsonRpc, JsonRpcNotification
+from myjsonrpc import JsonRpc, JsonRpcNotification
+from myjsonrpc.transports.websocket_transport import JsonRpcWebsocketsTransport
 
 CONNECTIONS = set()
 
