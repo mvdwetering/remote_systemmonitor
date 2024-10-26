@@ -35,22 +35,27 @@ class RemoteSystemMonitorApi:
     def __init__(self, host: str, port: int = DEFAULT_PORT, on_new_data=None) -> None:
         self.host = host
         self.port = port
-        self._on_update_data = on_new_data
+        self._on_new_data = on_new_data
 
         # TODO: Need to do something with disconnects/connection errors, probably on backend??
         self._backend = jsonrpc.JsonRpcAioHttpWebsocketClientTransport()
         self._jsonrpc = jsonrpc.JsonRpc(self._backend)
+        self._jsonrpc.register_notification_handler("update_data", self._on_update_data_notification)
 
     async def connect(self):
         uri = f"ws://{self.host}:{self.port}"
-        await self._jsonrpc.connect(uri)
-        self._jsonrpc.register_notification_handler("update_data", self._on_update_data)
+        await self._backend.connect(uri)
         logging.debug("Connected")
 
 
     async def disconnect(self):
         logging.debug("Disconnect")
-        await self._jsonrpc.disconnect()
+        await self._backend.disconnect()
+
+    async def _on_update_data_notification(self, data) -> None:
+        if self._on_new_data is not None: 
+            await self._on_new_data(data)
+
 
     async def get_api_info(self) -> ApiInfo:
         response = await self._jsonrpc.call_method("get_api_info")
@@ -76,9 +81,9 @@ async def main(args):
 
     data_received = 0
 
-    async def on_new_data(params):
+    async def on_new_data(data):
         nonlocal data_received
-        print(f"### THE DATA ### -- {params['data']}")
+        print(f"### THE DATA ### -- {data}")
         data_received = data_received + 1
 
     api = RemoteSystemMonitorApi(args.host, args.port, on_new_data=on_new_data)
@@ -92,12 +97,13 @@ async def main(args):
     machine_info = await api.get_machine_info()
     print(machine_info)
 
-    while True:
+    done = False
+    while not done:
         await asyncio.sleep(5)
         print(".")
         if data_received > 2:
-            print("\n** ENOUGH DATA WAS RECEIVED, DISCONNECTING **")
-            break
+            print("\n** ENOUGH DATA WAS RECEIVED **")
+            done = True
 
     await api.disconnect()
 

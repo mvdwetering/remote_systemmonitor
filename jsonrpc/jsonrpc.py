@@ -73,9 +73,6 @@ class JsonRpc:
         self._notification_handlers: dict[str, Callable[[Any], None]] = {}
         self._request_handlers: dict[str, Coroutine[Any, Any, Any]] = {}
 
-        self._request_tasks: set[asyncio.Task] = set()
-        self._notification_tasks: set[asyncio.Task] = set()
-
         backend.register_on_receive_handler(self._on_receive)
 
     def register_notification_handler(self, method, handler):
@@ -87,20 +84,6 @@ class JsonRpc:
         Note that this is UNTESTED !!!
         """
         self._request_handlers[method] = handler
-
-    async def connect(self, uri):
-        await self._backend.connect(uri)
-
-    async def disconnect(self):
-        await self._backend.disconnect()
-        for task in self._request_tasks:
-            task.cancel()
-        for task in self._notification_tasks:
-            task.cancel()
-
-        # TODO: Is it needed to wait after they have been cancelled?
-        await asyncio.gather(*self._request_tasks, return_exceptions=True)
-        await asyncio.gather(*self._notification_tasks, return_exceptions=True)
 
     async def call_method(
         self, method: str, params: Any | None = None
@@ -174,22 +157,27 @@ class JsonRpc:
 
             if method and id is None:
                 logging.debug("Notification message received for method: %s", method)
-                if notification_handler := self._notification_handlers.get(
+                notification_handler = self._notification_handlers.get(
                     method, None
-                ):
-                    try:
-                        if isinstance(params, list):
-                            result = await notification_handler(*params)
-                        elif isinstance(params, dict):
-                            result = await notification_handler(**params)
-                        elif params is None:
-                            result = await notification_handler()
-                    except Exception:
-                        pass # Just eat it, not responses for notifications
+                )
 
+                if notification_handler is None:
+                    logging.debug("No notification handler for method: %s", method)
+                    return None
 
-                logging.debug("No notification handler for method: %s", method)
+                try:
+                    if isinstance(params, list):
+                        await notification_handler(*params)
+                    elif isinstance(params, dict):
+                        await notification_handler(**params)
+                    elif params is None:
+                        await notification_handler()
+                except Exception:
+                    logging.exception("Exception in notification handler")
+
+                # No responses for notifications
                 return None
+
 
             if method:
                 logging.debug("Request message received for method: %s", method)
