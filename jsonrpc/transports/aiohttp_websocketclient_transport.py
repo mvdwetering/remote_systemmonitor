@@ -61,8 +61,10 @@ class JsonRpcAioHttpWebsocketClientTransport:
                     continue
                 if message.type == aiohttp.WSMsgType.TEXT:
                     if self._on_receive_handler:
-                        self._on_receive_handler(message.data)
+                        result = await self._on_receive_handler(message.data)
+                        if result is not None:
+                            await websocket.send_str(result)
                     continue
-            except Exception as err:
+            except Exception:
                 logging.exception("Exception in websocket receiver")
                 return

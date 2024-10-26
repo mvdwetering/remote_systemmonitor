@@ -44,7 +44,7 @@ class JsonRpcResponse:
     def __init__(
         self,
         id: str | int | float | None,
-        result=None,
+        result:Any=None,
         error: JsonRpcResponseError | None = None,
     ) -> None:
         self.id = id  # id can only be None/Null when id could not be retrieved
@@ -121,8 +121,8 @@ class JsonRpc:
         self._pending_method_calls[id] = pending_future
 
         await self._backend.send(json.dumps(message))
-        await pending_future
 
+        await pending_future
         return pending_future.result()
 
     async def send_notification(self, method: str, params: Any | None = None) -> None:
@@ -136,28 +136,6 @@ class JsonRpc:
             message["params"] = params
 
         await self._backend.send(json.dumps(message))
-
-    async def _handle_request_task(self, id, request_handler, params):
-        logging.debug("Handle request handler: %s", params)
-        response = await request_handler(*params)
-
-        message = {
-            "jsonrpc": "2.0",
-            "id": id,
-        }
-
-        if response.result is not None:
-            message["result"] = response.result
-        if response.error is not None:
-            message["error"] = response.error.to_dict()
-
-        await self._backend.send(json.dumps(message))
-        if task := asyncio.current_task():
-            self._request_tasks.remove(task)
-
-    async def _handle_notification_task(self, notification_handler, params):
-        logging.debug("Handle notification handler: %s", params)
-        notification_handler(params)
 
     async def _on_receive(self, inbound_message: str) -> str | None:
         logging.debug("On receive, message %s", inbound_message)
@@ -180,7 +158,7 @@ class JsonRpc:
                 )
 
             method = message.get("method", None)
-            if not isinstance(method, str):
+            if method and not isinstance(method, str):
                 return str(
                     JsonRpcResponse(
                         id=None,
@@ -250,9 +228,9 @@ class JsonRpc:
                 )
 
             if id and (result or error):
-                logging.debug("Response message received for id: %s", id)
+                logging.debug("Response message received for id: %s, result: %s, error: %s", id, result, error)
                 if pending_method_handler := self._pending_method_calls.pop(id, None):
-                    pending_method_handler.set_result(JsonRpcResponse(result, error))
+                    pending_method_handler.set_result(JsonRpcResponse(id, result, error))
                     return None
                 else:
                     logging.warning("No pending response handler for id: %s", id)
