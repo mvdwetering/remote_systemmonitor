@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Server API for Remote System Monitor."""
+"""Collector API for Remote System Monitor."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class MachineInfo(DataClassDictMixin):
     processor:str
 
 
-class RemoteSystemMonitorApi:
+class RemoteSystemMonitorCollectorApi:
     def __init__(self, host: str, port: int = DEFAULT_PORT, on_new_data=None) -> None:
         self.host = host
         self.port = port
@@ -72,8 +72,8 @@ class RemoteSystemMonitorApi:
             raise Exception(f"Error: {response.error}")
 
         api_info = ApiInfo.from_dict(response.result)
-        if api_info.id != "RemoteSystemMonitorApi":
-            raise Exception("Not a RemoteSystemMonitorApi")
+        if api_info.id != "RemoteSystemMonitorCollectorApi":
+            raise Exception("Not a RemoteSystemMonitorCollectorApi")
 
         return api_info
 
@@ -94,7 +94,7 @@ async def main(args):
         print(f"### THE DATA ### -- {data}")
         data_received = data_received + 1
 
-    api = RemoteSystemMonitorApi(args.host, args.port, on_new_data=on_new_data)
+    api = RemoteSystemMonitorCollectorApi(args.host, args.port, on_new_data=on_new_data)
     await api.connect()
 
     api_info = await api.get_api_info()
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "host",
         type=str,
-        help="The hostname or IP of the server to connect to.",
+        help="The hostname or IP of the collector to connect to.",
     )
     parser.add_argument(
         "--port",

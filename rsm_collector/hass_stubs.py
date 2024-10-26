@@ -1,5 +1,5 @@
 """
-Dummy HomeAssistant implementations for the server.
+Dummy HomeAssistant implementations for the collector.
 Intended to keep changes of copied code limited, so it will be easier to update in the future
 """
 import asyncio

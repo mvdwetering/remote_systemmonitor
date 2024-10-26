@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Server for Remote System Monitor."""
+"""Collector for Remote System Monitor."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ import platform
 
 from websockets.asyncio.server import broadcast, serve
 
-from server import async_setup_entry
-from server.hass_stubs import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
+from rsm_collector import async_setup_entry
+from rsm_collector.hass_stubs import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
 
 from myjsonrpc import JsonRpcWebsocketsTransport, JsonRpc, JsonRpcNotification
 
@@ -22,7 +22,7 @@ async def myjsonrpc_handler(websocket):
     async def _on_get_api_info() -> dict:
         return {
             "version": "0.0.1",
-            "id": "RemoteSystemMonitorApi",
+            "id": "RemoteSystemMonitorCollectorApi",
         }
 
     async def _on_get_machine_info() -> dict:
@@ -59,7 +59,9 @@ async def websocket_handler(websocket):
     CONNECTIONS.add(websocket)
 
     try:
+        logging.info("New connection from %s", websocket.remote_address)
         await myjsonrpc_handler(websocket)
+        logging.info("Connection closed from %s", websocket.remote_address)
     finally:
         CONNECTIONS.remove(websocket)
 
@@ -105,9 +107,8 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    """Run server."""
     ## Commandlineoptions
-    parser = argparse.ArgumentParser(description="Remote SystemMonitor server    .")
+    parser = argparse.ArgumentParser(description="Remote SystemMonitor collector.")
     parser.add_argument(
         "--loglevel",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],

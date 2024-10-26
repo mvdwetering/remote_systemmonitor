@@ -30,7 +30,7 @@ from homeassistant.const import (
     CONF_PORT,
 )
 
-from .server_api import RemoteSystemMonitorApi
+from .rsm_collector_api import RemoteSystemMonitorCollectorApi
 
 
 
@@ -114,17 +114,21 @@ async def validate_input(data: dict[str, Any]) -> dict[str, Any]:
     Data has the keys from USER_DATA_SCHEMA with values provided by the user.
     """
     print("validate_input", data[CONF_HOST])
-    server_api = RemoteSystemMonitorApi(data[CONF_HOST])
+    collector_api = RemoteSystemMonitorCollectorApi(data[CONF_HOST])
     try:
-        await server_api.connect()
+        print("Before connect")
+        await collector_api.connect()
+        print("After connect")
         # TODO: Get machine data like name
-    # TODO: Handle exceptions from server_api like UnableToConnect and Unauthorized
+    # TODO: Handle exceptions from collector_api like UnableToConnect and Unauthorized
     # except aioytmdesktopapi.Unauthorized:
     #     raise InvalidAuth
     # except aioytmdesktopapi.RequestError:
     #     raise CannotConnect
     finally:
-        await server_api.disconnect()
+        print("Before disconnect")
+        await collector_api.disconnect()
+        print("After disconnect")
 
     # Return info that you want to store in the config entry.
     return {"title": f"Remote System Monitor ({ data[CONF_HOST]})"}

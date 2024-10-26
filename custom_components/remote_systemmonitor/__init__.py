@@ -16,7 +16,7 @@ from homeassistant.const import (
     CONF_HOST,
 )
 
-from .server_api import RemoteSystemMonitorApi
+from .rsm_collector_api import RemoteSystemMonitorCollectorApi
 
 from .coordinator import SystemMonitorCoordinator
 # from .util import get_all_disk_mounts
@@ -32,7 +32,7 @@ class SystemMonitorData:
 
     coordinator: SystemMonitorCoordinator
     psutil_wrapper: ha_psutil.PsutilWrapper
-    server_api: RemoteSystemMonitorApi
+    collector_api: RemoteSystemMonitorCollectorApi
 
 
 type SystemMonitorConfigEntry = ConfigEntry[SystemMonitorData]
@@ -58,11 +58,11 @@ async def async_setup_entry(
 
     # _LOGGER.debug("disk arguments to be added: %s", disk_arguments)
 
-    print(f"async_setup_entry RemoteSystemMonitorApi({entry.data[CONF_HOST]})")
-    server_api = RemoteSystemMonitorApi(entry.data[CONF_HOST])
+    print(f"async_setup_entry RemoteSystemMonitorCollectorApi({entry.data[CONF_HOST]})")
+    collector_api = RemoteSystemMonitorCollectorApi(entry.data[CONF_HOST])
     try:
-        await server_api.connect()
-        api_info = await server_api.get_api_info()
+        await collector_api.connect()
+        api_info = await collector_api.get_api_info()
         _LOGGER.debug("api_info: %s", api_info)
 
         # Make sure there has been an update
@@ -70,10 +70,10 @@ async def async_setup_entry(
         await asyncio.sleep(16)
         print("After sleep first data received")
     except Exception as err:
-        await server_api.disconnect()
+        await collector_api.disconnect()
         raise ConfigEntryNotReady(err) from err
 
-    initial_data = server_api._last_data
+    initial_data = collector_api._last_data
     disk_arguments = initial_data["disk_usage"].keys()
 
     coordinator: SystemMonitorCoordinator = SystemMonitorCoordinator(
@@ -85,10 +85,10 @@ async def async_setup_entry(
         _LOGGER.debug("on_new_data: %s", data)
         coordinator.async_set_updated_data(data)
 
-    server_api._on_update_data_notification = on_new_data
+    collector_api._on_update_data_notification = on_new_data
 
     # await coordinator.async_config_entry_first_refresh()
-    entry.runtime_data = SystemMonitorData(coordinator, psutil_wrapper, server_api)
+    entry.runtime_data = SystemMonitorData(coordinator, psutil_wrapper, collector_api)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(update_listener))
@@ -97,7 +97,7 @@ async def async_setup_entry(
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload System Monitor config entry."""
-    await entry.runtime_data.server_api.disconnect()
+    await entry.runtime_data.collector_api.disconnect()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 

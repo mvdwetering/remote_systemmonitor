@@ -1,12 +1,13 @@
+"""Remote SystemMonitor collector."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 import importlib.util  # It is here to load for ha_psutil which seems to be missing it, but does need it  # noqa: F401
 import logging
 
-from server.coordinator import SystemMonitorCoordinator
-from server.hass_stubs import ConfigEntry, HomeAssistant
-from server.util import get_all_disk_mounts
+from .coordinator import SystemMonitorCoordinator
+from .hass_stubs import ConfigEntry, HomeAssistant
+from .util import get_all_disk_mounts
 import psutil_home_assistant as ha_psutil
 
 

@@ -2,14 +2,14 @@
 
 homeassistant-stubs==2024.10.0
 
-# Server api uses aiohttp iso websockets because of conflicts in HA
+# Collector api uses aiohttp iso websockets because of conflicts in HA
 # Probably with other integrations needed a newer version
 aiohttp>=3.10,<4
 
 # JsonRpc code
 mashumaro>=3.13,<4
 
-# Server stuff
+# Collector stuff
 psutil-home-assistant>=0.0.1
 psutil>=6.0.0,<7.0.0
 typing_extensions>=4.12.2

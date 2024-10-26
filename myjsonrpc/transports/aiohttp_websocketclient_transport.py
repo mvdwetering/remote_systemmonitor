@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Server API for Remote System Monitor."""
 
 from __future__ import annotations
 
