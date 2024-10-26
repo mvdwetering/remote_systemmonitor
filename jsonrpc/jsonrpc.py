@@ -16,8 +16,8 @@ from mashumaro.mixins.dict import DataClassDictMixin
 
 @enum.unique
 class JsonRpcErrorCode(enum.Enum):
-    PARSE_ERROR = (-32700, "Error parsing the message")
-    INVALID_REQUEST = (-32600, "Not a valid Request object")
+    PARSE_ERROR = (-32700, "Parse error")
+    INVALID_REQUEST = (-32600, "Invalid Request")
     METHOD_NOT_FOUND = (-32601, "Method not found")
     INVALID_PARAMS = (-32602, "Invalid method parameters")
     INTERNAL_ERROR = (-32603, "Internal JSON-RPC error")
@@ -180,6 +180,13 @@ class JsonRpc:
                 )
 
             method = message.get("method", None)
+            if not isinstance(method, str):
+                return str(
+                    JsonRpcResponse(
+                        id=None,
+                        error=JsonRpcResponseError(JsonRpcErrorCode.INVALID_REQUEST),
+                    )
+                )
             params = message.get(
                 "params", None
             )  # TODO: Add more checking, params should be a dict or list
@@ -192,26 +199,33 @@ class JsonRpc:
                 if notification_handler := self._notification_handlers.get(
                     method, None
                 ):
-                    notification_task = asyncio.create_task(
-                        self._handle_notification_task(notification_handler, params)
-                    )
-                    self._notification_tasks.add(notification_task)
-                    return None
+                    try:
+                        if isinstance(params, list):
+                            result = await notification_handler(*params)
+                        elif isinstance(params, dict):
+                            result = await notification_handler(**params)
+                        elif params is None:
+                            result = await notification_handler()
+                    except Exception:
+                        pass # Just eat it, not responses for notifications
+
 
                 logging.debug("No notification handler for method: %s", method)
-                return str(
-                    JsonRpcResponse(
-                        id=None,
-                        error=JsonRpcResponseError(JsonRpcErrorCode.METHOD_NOT_FOUND),
-                    )
-                )
+                return None
 
             if method:
                 logging.debug("Request message received for method: %s", method)
                 if request_handler := self._request_handlers.get(method, None):
                     # TODO: Maybe requests should be handled an a separate task?
                     try:
-                        result = await request_handler(*params)
+                        if isinstance(params, list):
+                            result = await request_handler(*params)
+                        elif isinstance(params, dict):
+                            result = await request_handler(**params)
+                        elif params is None:
+                            result = await request_handler()
+                        else:
+                            error = JsonRpcResponseError(JsonRpcErrorCode.INVALID_PARAMS)
                     except Exception:
                         error = JsonRpcResponseError(JsonRpcErrorCode.INTERNAL_ERROR)
 

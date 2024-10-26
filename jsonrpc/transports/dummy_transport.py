@@ -26,3 +26,6 @@ class JsonRpcDummyTransport:
         if self._on_receive_handler:
             result = await self._on_receive_handler(message)
             self.receive_responses.append(result)
+
+    def last_received_response(self):
+        return self.receive_responses[-1]
