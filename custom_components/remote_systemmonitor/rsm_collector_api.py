@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
 import logging
 import re
 from typing import Any
@@ -87,7 +88,7 @@ class SensorData:
     # addresses: dict[str, list[snicaddr]]
     # load: tuple[float, float, float]
     cpu_percent: float | None
-    # boot_time: datetime
+    boot_time: datetime
     # processes: list[Process]
     # temperatures: dict[str, list[shwtemp]]
 
@@ -102,7 +103,7 @@ class SensorData:
             # addresses=data.get("addresses"),
             # load=data.get("load"),
             cpu_percent=data.get("cpu_percent"),
-            # boot_time=data.get("boot_time"),
+            boot_time=datetime.fromisoformat(data["boot_time"]),
             # processes=data.get("processes"),
             # temperatures=data.get("temperatures"),
         )
@@ -129,7 +130,7 @@ class SensorData:
             # "addresses": addresses,
             # "load": str(self.load),
             "cpu_percent": self.cpu_percent,  # Why did this have str(self.cpu_percent) ??
-            # "boot_time": str(self.boot_time),
+            "boot_time": str(self.boot_time),
             # "processes": str(self.processes),
             # "temperatures": temperatures,
         }

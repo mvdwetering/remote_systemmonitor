@@ -191,13 +191,13 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
     #     value_fn=get_ip_address,
     #     add_to_update=lambda entity: ("addresses", ""),
     # ),
-    # "last_boot": SysMonitorSensorEntityDescription(
-    #     key="last_boot",
-    #     translation_key="last_boot",
-    #     device_class=SensorDeviceClass.TIMESTAMP,
-    #     value_fn=lambda entity: datetime.fromisoformat(entity.coordinator.data["boot_time"]),
-    #     add_to_update=lambda entity: ("boot", ""),
-    # ),
+    "last_boot": SysMonitorSensorEntityDescription(
+        key="last_boot",
+        translation_key="last_boot",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda entity: entity.coordinator.data.boot_time,
+        add_to_update=lambda entity: ("boot", ""),
+    ),
     # "load_15m": SysMonitorSensorEntityDescription(
     #     key="load_15m",
     #     translation_key="load_15m",
@@ -327,7 +327,7 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda entity: (
             round(entity.coordinator.data.cpu_percent)
-            if entity.coordinator.data.cpu_percent
+            if entity.coordinator.data.cpu_percent is not None # Check for None, otherwise will become Unknown when value is 0
             else None
         ),
         add_to_update=lambda entity: ("cpu_percent", ""),
