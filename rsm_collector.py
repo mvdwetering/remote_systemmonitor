@@ -103,7 +103,7 @@ async def main(args):
     entry.runtime_data.coordinator.update_subscribers[("memory", "")] = set("dummy")
     # entry.runtime_data.coordinator.update_subscribers[("io_counters", "")] = set("dummy")
     # entry.runtime_data.coordinator.update_subscribers[("addresses", "")] = set("dummy")
-    # entry.runtime_data.coordinator.update_subscribers[("load", "")] = set("dummy")
+    entry.runtime_data.coordinator.update_subscribers[("load", "")] = set("dummy")
     entry.runtime_data.coordinator.update_subscribers[("cpu_percent", "")] = set("dummy")
     ## Technically not needed to send all the time since when rebooting collector will be restarted anyway
     ## But lets leave it in for now to avoid additional work now

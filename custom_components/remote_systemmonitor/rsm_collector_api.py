@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
@@ -45,7 +46,7 @@ class MachineInfo(DataClassDictMixin):
 class NamedTupleStringDecoder:
 
     @classmethod
-    def from_tuple_string(cls, named_tuple_string: str):
+    def from_named_tuple_string(cls, named_tuple_string: str):
         matches = re.findall(r"(\w+)\s*=\s*(\d+(?:\.\d+)?)", named_tuple_string)
         return cls(**dict(matches))
 
@@ -86,7 +87,7 @@ class SensorData:
     memory: Memory
     # io_counters: dict[str, snetio]
     # addresses: dict[str, list[snicaddr]]
-    # load: tuple[float, float, float]
+    load: tuple[float, float, float]
     cpu_percent: float | None
     boot_time: datetime
     # processes: list[Process]
@@ -96,12 +97,12 @@ class SensorData:
     def from_dict(data: dict[str, Any]) -> SensorData:
         # disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
         return SensorData(
-            disk_usage={k: DiskUsage.from_tuple_string(v) for k, v in data["disk_usage"].items()},
+            disk_usage={k: DiskUsage.from_named_tuple_string(v) for k, v in data["disk_usage"].items()},
             # swap=data.get("swap"),
-            memory=Memory.from_tuple_string(data["memory"]),
+            memory=Memory.from_named_tuple_string(data["memory"]),
             # io_counters=data.get("io_counters"),
             # addresses=data.get("addresses"),
-            # load=data.get("load"),
+            load=ast.literal_eval(data["load"]),
             cpu_percent=data.get("cpu_percent"),
             boot_time=datetime.fromisoformat(data["boot_time"]),
             # processes=data.get("processes"),
@@ -128,7 +129,7 @@ class SensorData:
             "memory": str(self.memory),
             # "io_counters": io_counters,
             # "addresses": addresses,
-            # "load": str(self.load),
+            "load": str(self.load),
             "cpu_percent": self.cpu_percent,  # Why did this have str(self.cpu_percent) ??
             "boot_time": str(self.boot_time),
             # "processes": str(self.processes),
