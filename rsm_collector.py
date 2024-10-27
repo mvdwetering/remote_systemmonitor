@@ -21,15 +21,18 @@ from myjsonrpc.transports.websocket_transport import WebsocketsServerTransport
 
 CONNECTIONS = set()
 
+API_VERSION = "0.0.2"
 
 async def myjsonrpc_handler(websocket, machine_id: str, newest_data: SensorData):
     async def _on_get_api_info() -> dict:
+        logging.info("Get api info")
         return {
-            "version": "0.0.1",
+            "version": API_VERSION,
             "id": "RemoteSystemMonitorCollectorApi",
         }
 
     async def _on_get_machine_info() -> dict:
+        logging.info("Get machine info")
         return {
             "id": machine_id,
             "os": platform.system(),
@@ -44,7 +47,8 @@ async def myjsonrpc_handler(websocket, machine_id: str, newest_data: SensorData)
             "processor": platform.processor(),
         }
 
-    async def _on_get_latest_data() -> dict:
+    async def _on_get_initial_data() -> dict:
+        logging.info("Get initial data")
         return {"data": newest_data.as_dict()}
 
     disconnected_future: asyncio.Future = asyncio.Future()
@@ -57,7 +61,7 @@ async def myjsonrpc_handler(websocket, machine_id: str, newest_data: SensorData)
     jsonrpc = JsonRpc(transport)
     jsonrpc.register_request_handler("get_api_info", _on_get_api_info)
     jsonrpc.register_request_handler("get_machine_info", _on_get_machine_info)
-    jsonrpc.register_request_handler("get_latest_data", _on_get_latest_data)
+    jsonrpc.register_request_handler("get_initial_data", _on_get_initial_data)
 
     await transport.connect()
 
@@ -76,6 +80,10 @@ async def websocket_handler(websocket, machine_id: str, newest_data: SensorData)
 
 
 async def main(args):
+    print("Remote System Monitor Collector")
+    print(f"API version: {API_VERSION}")
+    print("------------------------------")
+
     hass = HomeAssistant()
     entry = ConfigEntry()
 
@@ -103,8 +111,8 @@ async def main(args):
 
     new_data: SensorData = await entry.runtime_data.coordinator._async_update_data()
     machine_id = (
-        args.machineid
-        if args.machineid is not None
+        args.machine_id
+        if args.machine_id is not None
         else machineid.hashed_id("RemoteSystemMonitorCollector")
     )  # Don't change the app id because it would change the machine id !!!
 

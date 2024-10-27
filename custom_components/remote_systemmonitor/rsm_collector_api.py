@@ -87,6 +87,18 @@ class RemoteSystemMonitorCollectorApi:
             raise Exception(f"Error: {response.error}")
         return MachineInfo.from_dict(response.result)
 
+    async def get_initial_data(self):
+        if self._last_data is None:
+            response = await self._jsonrpc.call_method("get_initial_data")
+            if response.error is not None:
+                raise Exception(f"Error: {response.error}")
+
+            self._last_data = response.result['data']
+
+        return self._last_data
+
+
+
 
 async def main(args):
 
@@ -94,7 +106,7 @@ async def main(args):
 
     async def on_new_data(data):
         nonlocal data_received
-        print(f"### THE DATA ### -- {data}")
+        print(f"### NEW DATA ### -- {data}")
         data_received = data_received + 1
 
     api = RemoteSystemMonitorCollectorApi(args.host, args.port, on_new_data=on_new_data)
@@ -102,11 +114,14 @@ async def main(args):
 
     api_info = await api.get_api_info()
     print(api_info)
-    if api_info.version != "0.0.1":
-        raise Exception("Unsupported API version")
+    if api_info.version != "0.0.2":
+        raise Exception(f"Unsupported API version: {api_info.version}")
 
     machine_info = await api.get_machine_info()
     print(machine_info)
+
+    initial_data = await api.get_initial_data()
+    print(initial_data)
 
     done = False
     while not done:
