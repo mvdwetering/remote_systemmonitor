@@ -99,15 +99,17 @@ async def main(args):
         )
 
     # Subscribe all / most data for updates
-    entry.runtime_data.coordinator.update_subscribers[("swap", "")] = "dummy"
-    entry.runtime_data.coordinator.update_subscribers[("memory", "")] = "dummy"
-    # entry.runtime_data.coordinator.update_subscribers[("io_counters", "")] = "dummy"
-    # entry.runtime_data.coordinator.update_subscribers[("addresses", "")] = "dummy"
-    # entry.runtime_data.coordinator.update_subscribers[("load", "")] = "dummy"
-    # entry.runtime_data.coordinator.update_subscribers[("cpu_percent", "")] = "dummy"
-    # entry.runtime_data.coordinator.update_subscribers[("boot", "")] = "dummy"
-    # # entry.runtime_data.coordinator.update_subscribers[("processes", "")] = "dummy"
-    # entry.runtime_data.coordinator.update_subscribers[("temperatures", "")] = "dummy"
+    entry.runtime_data.coordinator.update_subscribers[("swap", "")] = set("dummy")
+    entry.runtime_data.coordinator.update_subscribers[("memory", "")] = set("dummy")
+    # entry.runtime_data.coordinator.update_subscribers[("io_counters", "")] = set("dummy")
+    # entry.runtime_data.coordinator.update_subscribers[("addresses", "")] = set("dummy")
+    # entry.runtime_data.coordinator.update_subscribers[("load", "")] = set("dummy")
+    # entry.runtime_data.coordinator.update_subscribers[("cpu_percent", "")] = set("dummy")
+    ## Don't enable boot, not needed to send all the time since when rebooting collector will be restarted anyway
+    # entry.runtime_data.coordinator.update_subscribers[("boot", "")] = set("dummy")
+    ## I don't have a case for monitoring processes and it seems like a lot of data. Leave out for now
+    # # entry.runtime_data.coordinator.update_subscribers[("processes", "")] = set("dummy")
+    # entry.runtime_data.coordinator.update_subscribers[("temperatures", "")] = set("dummy")
 
     new_data: SensorData = await entry.runtime_data.coordinator._async_update_data()
     machine_id = (
