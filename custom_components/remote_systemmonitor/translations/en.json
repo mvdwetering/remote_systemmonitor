@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Service is already configured"
+            "already_configured": "Service is already configured for this machine"
         },
         "step": {
             "user": {

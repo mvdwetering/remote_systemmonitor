@@ -2,22 +2,24 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from typing import Any
-import logging
 
 import voluptuous as vol
-
+from awesomeversion import AwesomeVersion
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR_DOMAIN
-from homeassistant.config_entries import ConfigFlowResult
-from homeassistant.config_entries import ConfigEntry, ConfigFlow
-
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_PORT,
+)
 from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.schema_config_entry_flow import (
     SchemaCommonFlowHandler,
-    SchemaOptionsFlowHandler,
     SchemaFlowFormStep,
+    SchemaOptionsFlowHandler,
 )
 from homeassistant.helpers.selector import (
     SelectSelector,
@@ -25,19 +27,15 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 from homeassistant.util import slugify
-from homeassistant.const import (
-    CONF_HOST,
-    CONF_PORT,
-)
-
-from .rsm_collector_api import RemoteSystemMonitorCollectorApi
-
-
 
 from .const import CONF_PROCESS, DOMAIN
+from .rsm_collector_api import RemoteSystemMonitorCollectorApi
 from .util import get_all_running_processes
 
 _LOGGER = logging.getLogger(__name__)
+
+MIN_API_VERSION = AwesomeVersion("0.0.2")
+
 
 USER_DATA_SCHEMA = vol.Schema(
     {
@@ -108,37 +106,37 @@ OPTIONS_FLOW = {
     )
 }
 
+
 async def validate_input(data: dict[str, Any]) -> dict[str, Any]:
     """
     Validate the user input allows us to connect.
     Data has the keys from USER_DATA_SCHEMA with values provided by the user.
     """
-    print("validate_input", data[CONF_HOST])
     collector_api = RemoteSystemMonitorCollectorApi(data[CONF_HOST])
+    machine_name = None
+    machine_id = None
     try:
-        print("Before connect")
         await collector_api.connect()
-        print("After connect")
-        # TODO: Get machine data like name
-    # TODO: Handle exceptions from collector_api like UnableToConnect and Unauthorized
-    # except aioytmdesktopapi.Unauthorized:
-    #     raise InvalidAuth
-    # except aioytmdesktopapi.RequestError:
-    #     raise CannotConnect
+
+        api_info = await collector_api.get_api_info()
+        if AwesomeVersion(api_info.version) < MIN_API_VERSION:
+            raise Exception(f"Unsupported API version: {api_info.version}")
+
+        machine_info = await collector_api.get_machine_info()
+        machine_name = machine_info.hostname
+        machine_id = machine_info.id
     finally:
-        print("Before disconnect")
         await collector_api.disconnect()
-        print("After disconnect")
 
     # Return info that you want to store in the config entry.
-    return {"title": f"Remote System Monitor ({ data[CONF_HOST]})"}
+    return {"title": machine_name, "unique_id": machine_id}
 
 
 class SystemMonitorConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for System Monitor."""
 
     VERSION = 1
-    MINOR_VERSION = 3
+    MINOR_VERSION = 1
 
     @staticmethod
     @callback
@@ -178,9 +176,10 @@ class SystemMonitorConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             errors["base"] = "cannot_connect"
             # errors["base"] = "unknown"
         else:
-            # TODO: Protect against setting up the same remote host multiple times.
-            #       Needs some kind of unique ID from remote host
-            print(f"self.async_create_entry(title={info["title"]}, data={user_input})")
+            # Protect against setting up the same remote host multiple times.
+            await self.async_set_unique_id(info["unique_id"])
+            self._abort_if_unique_id_configured()
+
             return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(
