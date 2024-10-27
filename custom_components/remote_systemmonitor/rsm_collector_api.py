@@ -13,10 +13,10 @@ from mashumaro.mixins.dict import DataClassDictMixin
 # Some hackery to be able to use the "internal" package
 try:
     from .myjsonrpc import JsonRpc
-    from .myjsonrpc.transports.aiohttp_websocketclient_transport import JsonRpcAioHttpWebsocketClientTransport
+    from .myjsonrpc.transports.aiohttp_websocketclient_transport import AioHttpWebsocketClientTransport
 except ImportError:
     from myjsonrpc import JsonRpc
-    from myjsonrpc.transports.aiohttp_websocketclient_transport import JsonRpcAioHttpWebsocketClientTransport
+    from myjsonrpc.transports.aiohttp_websocketclient_transport import AioHttpWebsocketClientTransport
 
 
 DEFAULT_PORT = 2604
@@ -46,20 +46,20 @@ class RemoteSystemMonitorCollectorApi:
         # TODO: remove this
         self._last_data = None
 
-        # TODO: Need to do something with disconnects/connection errors, probably on backend??
-        self._backend = JsonRpcAioHttpWebsocketClientTransport()
-        self._jsonrpc = JsonRpc(self._backend)
+        # TODO: Need to do something with disconnects/connection errors, probably on transport??
+        self._transport = AioHttpWebsocketClientTransport()
+        self._jsonrpc = JsonRpc(self._transport)
         self._jsonrpc.register_notification_handler("update_data", self._on_update_data_notification)
 
     async def connect(self):
         uri = f"ws://{self.host}:{self.port}"
-        await self._backend.connect(uri)
+        await self._transport.connect(uri)
         logging.debug("Connected")
 
 
     async def disconnect(self):
         logging.debug("Disconnect")
-        await self._backend.disconnect()
+        await self._transport.disconnect()
 
     async def _on_update_data_notification(self, data) -> None:
         self._last_data = data

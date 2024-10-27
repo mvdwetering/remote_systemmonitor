@@ -103,13 +103,13 @@ class JsonRpcRequest(JsonRpcNotification):
 
 
 class JsonRpc:
-    def __init__(self, backend) -> None:
-        self._backend = backend
+    def __init__(self, transport) -> None:
+        self._transport = transport
         self._pending_method_calls: dict[str, asyncio.Future] = {}
         self._notification_handlers: dict[str, Callable[[Any], None]] = {}
         self._request_handlers: dict[str, Coroutine[Any, Any, Any]] = {}
 
-        backend.register_on_receive_handler(self._on_receive)
+        transport.register_on_receive_handler(self._on_receive)
 
     def register_notification_handler(self, method, handler):
         self._notification_handlers[method] = handler
@@ -127,7 +127,7 @@ class JsonRpc:
         request = JsonRpcRequest(method, params)
         self._pending_method_calls[request.id] = pending_future
 
-        await self._backend.send(str(request))
+        await self._transport.send(str(request))
 
         # TODO: Add some kind of timeout?
         await pending_future
@@ -135,7 +135,7 @@ class JsonRpc:
 
     async def send_notification(self, method: str, params: Any | None = None) -> None:
         logging.debug("Send notification, method: %s, params: %s", method, params)
-        await self._backend.send(str(JsonRpcNotification(method, params)))
+        await self._transport.send(str(JsonRpcNotification(method, params)))
 
     async def _handle_notification(self, method, params):
         notification_handler = self._notification_handlers.get(method, None)

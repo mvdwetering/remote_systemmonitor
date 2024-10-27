@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-class JsonRpcWebsocketsTransport:
+class WebsocketsServerTransport:
     def __init__(self, websocket, on_disconnect) -> None:
         self._websocket  = websocket
         self._on_receive_handler = None
@@ -17,21 +17,21 @@ class JsonRpcWebsocketsTransport:
     async def connect(self):
         assert self._on_receive_handler is not None
         self._receive_task = asyncio.create_task(self._receive_task(self._websocket))
-        logging.debug("Backend Connected")
+        logging.debug("Transport Connected")
 
     async def disconnect(self):
-        logging.debug("Backend Disconnect")
+        logging.debug("Transport Disconnect")
         await self._websocket.close()
 
     async def send(self, message:str):
-        logging.debug("Backend Send: %s", message)
+        logging.debug("Transport Send: %s", message)
         assert self._websocket is not None
         await self._websocket.send(message)
 
     async def _receive_task(self, websocket) -> None:
         try:
             async for message in websocket:
-                logging.debug(f"backend receiver -- {message}")
+                logging.debug(f"Transport receiver -- {message}")
                 if self._on_receive_handler:
                     result = await self._on_receive_handler(message)
                     if result is not None:

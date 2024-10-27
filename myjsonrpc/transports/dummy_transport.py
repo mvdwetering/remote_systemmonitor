@@ -19,7 +19,7 @@ class JsonRpcDummyTransport:
         self._on_receive_handler = handler
 
     async def send(self, message: str):
-        logging.debug("Backend Send: %s", message)
+        logging.debug("Transport send: %s", message)
         self.sent_messages.append(message)
 
     async def call_receive(self, message: str):

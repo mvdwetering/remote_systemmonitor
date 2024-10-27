@@ -14,7 +14,7 @@ from rsm_collector import async_setup_entry
 from rsm_collector.hass_stubs import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
 
 from myjsonrpc import JsonRpc, JsonRpcNotification
-from myjsonrpc.transports.websocket_transport import JsonRpcWebsocketsTransport
+from myjsonrpc.transports.websocket_transport import WebsocketsServerTransport
 
 CONNECTIONS = set()
 
@@ -45,13 +45,13 @@ async def myjsonrpc_handler(websocket):
     async def _on_disconnect() -> None:
         disconnected_future.set_result(None)
 
-    backend = JsonRpcWebsocketsTransport(websocket, on_disconnect=_on_disconnect)
+    transport = WebsocketsServerTransport(websocket, on_disconnect=_on_disconnect)
 
-    jsonrpc = JsonRpc(backend)
+    jsonrpc = JsonRpc(transport)
     jsonrpc.register_request_handler("get_api_info", _on_get_api_info)
     jsonrpc.register_request_handler("get_machine_info", _on_get_machine_info)
 
-    await backend.connect()
+    await transport.connect()
 
     await disconnected_future
 
