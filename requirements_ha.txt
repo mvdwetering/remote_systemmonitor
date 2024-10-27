@@ -9,7 +9,7 @@
 aiohttp>=3.10,<4
 
 mashumaro>=3.13,<4
-awesomeversion>=
+awesomeversion>=24.6.0,<25
 
 # Home Assistant dev stuff
 homeassistant-stubs==2024.10.0
