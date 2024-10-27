@@ -55,7 +55,7 @@ class SensorData:
             "io_counters": io_counters,
             "addresses": addresses,
             "load": str(self.load),
-            "cpu_percent": str(self.cpu_percent),
+            "cpu_percent": self.cpu_percent,
             "boot_time": str(self.boot_time),
             "processes": str(self.processes),
             "temperatures": temperatures,

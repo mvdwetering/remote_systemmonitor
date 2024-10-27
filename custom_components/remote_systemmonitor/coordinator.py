@@ -123,102 +123,102 @@ class SystemMonitorCoordinator(TimestampDataUpdateCoordinator[SensorData]):
             ("temperatures", ""): set(),
         }
 
-    async def _async_update_data(self) -> SensorData:
-        """Fetch data."""
-        _LOGGER.debug("Update list is: %s", self.update_subscribers)
+    # async def _async_update_data(self) -> SensorData:
+    #     """Fetch data."""
+    #     _LOGGER.debug("Update list is: %s", self.update_subscribers)
 
-        _data = await self.hass.async_add_executor_job(self.update_data)
+    #     _data = await self.hass.async_add_executor_job(self.update_data)
 
-        load: tuple = (None, None, None)
-        if self.update_subscribers[("load", "")] or self._initial_update:
-            load = os.getloadavg()
-            _LOGGER.debug("Load: %s", load)
+    #     load: tuple = (None, None, None)
+    #     if self.update_subscribers[("load", "")] or self._initial_update:
+    #         load = os.getloadavg()
+    #         _LOGGER.debug("Load: %s", load)
 
-        cpu_percent: float | None = None
-        if self.update_subscribers[("cpu_percent", "")] or self._initial_update:
-            cpu_percent = self._psutil.cpu_percent(interval=None)
-            _LOGGER.debug("cpu_percent: %s", cpu_percent)
+    #     cpu_percent: float | None = None
+    #     if self.update_subscribers[("cpu_percent", "")] or self._initial_update:
+    #         cpu_percent = self._psutil.cpu_percent(interval=None)
+    #         _LOGGER.debug("cpu_percent: %s", cpu_percent)
 
-        self._initial_update = False
-        return SensorData(
-            disk_usage=_data["disks"],
-            swap=_data["swap"],
-            memory=_data["memory"],
-            io_counters=_data["io_counters"],
-            addresses=_data["addresses"],
-            load=load,
-            cpu_percent=cpu_percent,
-            boot_time=_data["boot_time"],
-            processes=_data["processes"],
-            temperatures=_data["temperatures"],
-        )
+    #     self._initial_update = False
+    #     return SensorData(
+    #         disk_usage=_data["disks"],
+    #         swap=_data["swap"],
+    #         memory=_data["memory"],
+    #         io_counters=_data["io_counters"],
+    #         addresses=_data["addresses"],
+    #         load=load,
+    #         cpu_percent=cpu_percent,
+    #         boot_time=_data["boot_time"],
+    #         processes=_data["processes"],
+    #         temperatures=_data["temperatures"],
+    #     )
 
-    def update_data(self) -> dict[str, Any]:
-        """To be extended by data update coordinators."""
-        disks: dict[str, sdiskusage] = {}
-        for argument in self._arguments:
-            if self.update_subscribers[("disks", argument)] or self._initial_update:
-                try:
-                    usage: sdiskusage = self._psutil.disk_usage(argument)
-                    _LOGGER.debug("sdiskusagefor %s: %s", argument, usage)
-                except PermissionError as err:
-                    _LOGGER.warning(
-                        "No permission to access %s, error %s", argument, err
-                    )
-                except OSError as err:
-                    _LOGGER.warning("OS error for %s, error %s", argument, err)
-                else:
-                    disks[argument] = usage
+    # def update_data(self) -> dict[str, Any]:
+    #     """To be extended by data update coordinators."""
+    #     disks: dict[str, sdiskusage] = {}
+    #     for argument in self._arguments:
+    #         if self.update_subscribers[("disks", argument)] or self._initial_update:
+    #             try:
+    #                 usage: sdiskusage = self._psutil.disk_usage(argument)
+    #                 _LOGGER.debug("sdiskusagefor %s: %s", argument, usage)
+    #             except PermissionError as err:
+    #                 _LOGGER.warning(
+    #                     "No permission to access %s, error %s", argument, err
+    #                 )
+    #             except OSError as err:
+    #                 _LOGGER.warning("OS error for %s, error %s", argument, err)
+    #             else:
+    #                 disks[argument] = usage
 
-        swap: sswap | None = None
-        if self.update_subscribers[("swap", "")] or self._initial_update:
-            swap = self._psutil.swap_memory()
-            _LOGGER.debug("sswap: %s", swap)
+    #     swap: sswap | None = None
+    #     if self.update_subscribers[("swap", "")] or self._initial_update:
+    #         swap = self._psutil.swap_memory()
+    #         _LOGGER.debug("sswap: %s", swap)
 
-        memory = None
-        if self.update_subscribers[("memory", "")] or self._initial_update:
-            memory = self._psutil.virtual_memory()
-            _LOGGER.debug("memory: %s", memory)
-            memory = VirtualMemory(
-                memory.total, memory.available, memory.percent, memory.used, memory.free
-            )
+    #     memory = None
+    #     if self.update_subscribers[("memory", "")] or self._initial_update:
+    #         memory = self._psutil.virtual_memory()
+    #         _LOGGER.debug("memory: %s", memory)
+    #         memory = VirtualMemory(
+    #             memory.total, memory.available, memory.percent, memory.used, memory.free
+    #         )
 
-        io_counters: dict[str, snetio] | None = None
-        if self.update_subscribers[("io_counters", "")] or self._initial_update:
-            io_counters = self._psutil.net_io_counters(pernic=True)
-            _LOGGER.debug("io_counters: %s", io_counters)
+    #     io_counters: dict[str, snetio] | None = None
+    #     if self.update_subscribers[("io_counters", "")] or self._initial_update:
+    #         io_counters = self._psutil.net_io_counters(pernic=True)
+    #         _LOGGER.debug("io_counters: %s", io_counters)
 
-        addresses: dict[str, list[snicaddr]] | None = None
-        if self.update_subscribers[("addresses", "")] or self._initial_update:
-            addresses = self._psutil.net_if_addrs()
-            _LOGGER.debug("ip_addresses: %s", addresses)
+    #     addresses: dict[str, list[snicaddr]] | None = None
+    #     if self.update_subscribers[("addresses", "")] or self._initial_update:
+    #         addresses = self._psutil.net_if_addrs()
+    #         _LOGGER.debug("ip_addresses: %s", addresses)
 
-        if self._initial_update:
-            # Boot time only needs to refresh on first pass
-            self.boot_time = dt_util.utc_from_timestamp(self._psutil.boot_time())
-            _LOGGER.debug("boot time: %s", self.boot_time)
+    #     if self._initial_update:
+    #         # Boot time only needs to refresh on first pass
+    #         self.boot_time = dt_util.utc_from_timestamp(self._psutil.boot_time())
+    #         _LOGGER.debug("boot time: %s", self.boot_time)
 
-        processes = None
-        if self.update_subscribers[("processes", "")] or self._initial_update:
-            processes = self._psutil.process_iter()
-            _LOGGER.debug("processes: %s", processes)
-            processes = list(processes)
+    #     processes = None
+    #     if self.update_subscribers[("processes", "")] or self._initial_update:
+    #         processes = self._psutil.process_iter()
+    #         _LOGGER.debug("processes: %s", processes)
+    #         processes = list(processes)
 
-        temps: dict[str, list[shwtemp]] = {}
-        if self.update_subscribers[("temperatures", "")] or self._initial_update:
-            try:
-                temps = self._psutil.sensors_temperatures()
-                _LOGGER.debug("temps: %s", temps)
-            except AttributeError:
-                _LOGGER.debug("OS does not provide temperature sensors")
+    #     temps: dict[str, list[shwtemp]] = {}
+    #     if self.update_subscribers[("temperatures", "")] or self._initial_update:
+    #         try:
+    #             temps = self._psutil.sensors_temperatures()
+    #             _LOGGER.debug("temps: %s", temps)
+    #         except AttributeError:
+    #             _LOGGER.debug("OS does not provide temperature sensors")
 
-        return {
-            "disks": disks,
-            "swap": swap,
-            "memory": memory,
-            "io_counters": io_counters,
-            "addresses": addresses,
-            "boot_time": self.boot_time,
-            "processes": processes,
-            "temperatures": temps,
-        }
+    #     return {
+    #         "disks": disks,
+    #         "swap": swap,
+    #         "memory": memory,
+    #         "io_counters": io_counters,
+    #         "addresses": addresses,
+    #         "boot_time": self.boot_time,
+    #         "processes": processes,
+    #         "temperatures": temps,
+    #     }

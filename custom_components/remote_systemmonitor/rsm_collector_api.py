@@ -101,7 +101,7 @@ class SensorData:
             # io_counters=data.get("io_counters"),
             # addresses=data.get("addresses"),
             # load=data.get("load"),
-            cpu_percent=float(data["cpu_percent"]),
+            cpu_percent=data.get("cpu_percent"),
             # boot_time=data.get("boot_time"),
             # processes=data.get("processes"),
             # temperatures=data.get("temperatures"),
@@ -128,7 +128,7 @@ class SensorData:
             # "io_counters": io_counters,
             # "addresses": addresses,
             # "load": str(self.load),
-            # "cpu_percent": str(self.cpu_percent),
+            "cpu_percent": self.cpu_percent,  # Why did this have str(self.cpu_percent) ??
             # "boot_time": str(self.boot_time),
             # "processes": str(self.processes),
             # "temperatures": temperatures,
@@ -156,6 +156,9 @@ class RemoteSystemMonitorCollectorApi:
     async def disconnect(self):
         logging.debug("Disconnect")
         await self._transport.disconnect()
+
+    def set_on_new_data_handler(self, on_new_data):
+        self._on_new_data = on_new_data
 
     async def _on_update_data_notification(self, data) -> None:
         sensor_data = SensorData.from_dict(data)
