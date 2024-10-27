@@ -1,0 +1,15 @@
+# Requirements for Home Assistant
+
+# Collector API (not the collector server)
+# Which should actually be a separate package
+
+# Collector API uses aiohttp iso websockets because of conflicts in HA
+# Probably with other integrations needed a newer version
+# -- needs to be same as in manifest --
+aiohttp>=3.10,<4
+
+mashumaro>=3.13,<4
+
+# Home Assistant dev stuff
+homeassistant-stubs==2024.10.0
+pytest-homeassistant-custom-component==0.13.171

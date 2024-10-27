@@ -28,6 +28,7 @@ jobs:
           pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements_test.txt ]; then pip install -r requirements_test.txt; fi
+          if [ -f requirements_all.txt ]; then pip install -r requirements_all.txt; fi
       - name: Test with pytest
         run: |
           pytest
@@ -37,3 +38,4 @@ jobs:
         uses: "hacs/action@main"
         with:
           category: "integration"
+          ignore: "brands"
