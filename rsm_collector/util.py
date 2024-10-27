@@ -11,7 +11,7 @@ from .hass_stubs import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
-SKIP_DISK_TYPES = {"proc", "tmpfs", "devtmpfs"}
+SKIP_DISK_TYPES = {"proc", "tmpfs", "devtmpfs", "fuse.snapfuse"}
 
 
 def get_all_disk_mounts(
