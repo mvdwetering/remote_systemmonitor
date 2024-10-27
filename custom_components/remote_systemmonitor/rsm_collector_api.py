@@ -7,6 +7,8 @@ import argparse
 import asyncio
 from dataclasses import dataclass
 import logging
+import re
+from typing import Any
 
 from mashumaro.mixins.dict import DataClassDictMixin
 
@@ -39,13 +41,106 @@ class MachineInfo(DataClassDictMixin):
     processor:str
 
 
+class NamedTupleStringDecoder:
+
+    @classmethod
+    def from_tuple_string(cls, named_tuple_string: str):
+        matches = re.findall(r"(\w+)\s*=\s*(\d+(?:\.\d+)?)", named_tuple_string)
+        return cls(**dict(matches))
+
+@dataclass(frozen=True, kw_only=True)
+class DiskUsage(NamedTupleStringDecoder):
+    total: int
+    used: int
+    free: int
+    percent: float
+
+    def __post_init__(self):
+        object.__setattr__(self, "total", int(self.total))
+        object.__setattr__(self, "used", int(self.used))
+        object.__setattr__(self, "free", int(self.free))
+        object.__setattr__(self, "percent", float(self.percent))
+
+@dataclass(frozen=True, kw_only=True)
+class Memory(NamedTupleStringDecoder):
+    total: int
+    available: int
+    percent: float
+    used: int
+    free: int
+
+    def __post_init__(self):
+        object.__setattr__(self, "total", int(self.total))
+        object.__setattr__(self, "available", int(self.available))
+        object.__setattr__(self, "percent", float(self.percent))
+        object.__setattr__(self, "used", int(self.used))
+        object.__setattr__(self, "free", int(self.free))
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class SensorData:
+    """Sensor data."""
+
+    disk_usage: dict[str, Any]
+    # swap: sswap
+    memory: Memory
+    # io_counters: dict[str, snetio]
+    # addresses: dict[str, list[snicaddr]]
+    # load: tuple[float, float, float]
+    # cpu_percent: float | None
+    # boot_time: datetime
+    # processes: list[Process]
+    # temperatures: dict[str, list[shwtemp]]
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> SensorData:
+        # disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
+        return SensorData(
+            disk_usage={k: DiskUsage.from_tuple_string(v) for k, v in data["disk_usage"].items()},
+            # swap=data.get("swap"),
+            memory=Memory.from_tuple_string(data["memory"]),
+            # io_counters=data.get("io_counters"),
+            # addresses=data.get("addresses"),
+            # load=data.get("load"),
+            # cpu_percent=data.get("cpu_percent"),
+            # boot_time=data.get("boot_time"),
+            # processes=data.get("processes"),
+            # temperatures=data.get("temperatures"),
+        )
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return as dict."""
+        disk_usage = None
+        if self.disk_usage:
+            disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
+        # io_counters = None
+        # if self.io_counters:
+        #     io_counters = {k: str(v) for k, v in self.io_counters.items()}
+        # addresses = None
+        # if self.addresses:
+        #     addresses = {k: str(v) for k, v in self.addresses.items()}
+        # temperatures = None
+        # if self.temperatures:
+        #     temperatures = {k: str(v) for k, v in self.temperatures.items()}
+        return {
+            "disk_usage": disk_usage,
+            # "swap": str(self.swap),
+            "memory": str(self.memory),
+            # "io_counters": io_counters,
+            # "addresses": addresses,
+            # "load": str(self.load),
+            # "cpu_percent": str(self.cpu_percent),
+            # "boot_time": str(self.boot_time),
+            # "processes": str(self.processes),
+            # "temperatures": temperatures,
+        }
+
+
 class RemoteSystemMonitorCollectorApi:
     def __init__(self, host: str, port: int = DEFAULT_PORT, on_new_data=None) -> None:
         self.host = host
         self.port = port
         self._on_new_data = on_new_data
-        # TODO: remove this
-        self._last_data = None
+        self._last_data: SensorData | None = None
 
         # TODO: Need to do something with disconnects/connection errors, probably on transport??
         self._transport = AioHttpWebsocketClientTransport()
@@ -63,9 +158,11 @@ class RemoteSystemMonitorCollectorApi:
         await self._transport.disconnect()
 
     async def _on_update_data_notification(self, data) -> None:
-        self._last_data = data
+        sensor_data = SensorData.from_dict(data)
+
+        self._last_data = sensor_data
         if self._on_new_data is not None: 
-            await self._on_new_data(data)
+            await self._on_new_data(sensor_data)
 
 
     async def get_api_info(self) -> ApiInfo:
@@ -93,7 +190,7 @@ class RemoteSystemMonitorCollectorApi:
             if response.error is not None:
                 raise Exception(f"Error: {response.error}")
 
-            self._last_data = response.result['data']
+            self._last_data = SensorData.from_dict(response.result['data'])
 
         return self._last_data
 

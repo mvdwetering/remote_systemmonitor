@@ -72,7 +72,7 @@ async def async_setup_entry(
         raise ConfigEntryNotReady(err) from err
 
     initial_data = collector_api._last_data
-    disk_arguments = initial_data["disk_usage"].keys()
+    disk_arguments = initial_data.disk_usage.keys()
 
     coordinator: SystemMonitorCoordinator = SystemMonitorCoordinator(
         hass, psutil_wrapper, disk_arguments

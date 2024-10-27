@@ -20,7 +20,7 @@ def get_all_disk_mounts(
 
     _LOGGER.debug("get_all_disk_mounts: %s", coordinator.data)
 
-    disks: set[str] = coordinator.data["disk_usage"].keys()
+    disks: set[str] = coordinator.data.disk_usage.keys()
 
     _LOGGER.debug("Adding disks: %s", ", ".join(disks))
     return disks

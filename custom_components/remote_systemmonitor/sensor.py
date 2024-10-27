@@ -128,26 +128,8 @@ class SysMonitorSensorEntityDescription(SensorEntityDescription):
     mandatory_arg: bool = False
     placeholder: str | None = None
 
-class sdiskusage:
-    """
-    Class to fix the sdiskusage data which does not get serialized properly.
-    The data needs to be transported properly, but this seems a faster way around it
-    """
 
-    def __init__(self, data:str) -> None:
-        # Example data 
-        # sdiskusage(total=40763392, used=40763392, free=0, percent=100.0)
-        data = data.replace("sdiskusage(","")
-        data = data.replace(")","")
-
-        parts = data.split(",")
-
-        self.total = int(parts[0][len("total="):])
-        self.used = int(parts[1][len(" used="):])
-        self.free = int(parts[2][len(" free="):])
-        self.percent = float(parts[3][len(" percent="):])
-
-
+# mypy: ignore-errors
 SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
     "disk_free": SysMonitorSensorEntityDescription(
         key="disk_free",
@@ -157,9 +139,9 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda entity: round(
-            sdiskusage(entity.coordinator.data["disk_usage"][entity.argument]).free / 1024**3, 1
+            entity.coordinator.data.disk_usage[entity.argument].free / 1024**3, 1
         )
-        if entity.argument in entity.coordinator.data["disk_usage"]
+        if entity.argument in entity.coordinator.data.disk_usage
         else None,
         none_is_unavailable=True,
         add_to_update=lambda entity: ("disks", entity.argument),
@@ -172,9 +154,9 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda entity: round(
-            sdiskusage(entity.coordinator.data["disk_usage"][entity.argument]).used / 1024**3, 1
+            entity.coordinator.data.disk_usage[entity.argument].used / 1024**3, 1
         )
-        if entity.argument in entity.coordinator.data["disk_usage"]
+        if entity.argument in entity.coordinator.data.disk_usage
         else None,
         none_is_unavailable=True,
         add_to_update=lambda entity: ("disks", entity.argument),
@@ -185,37 +167,37 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
         placeholder="mount_point",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda entity: sdiskusage(entity.coordinator.data["disk_usage"][
+        value_fn=lambda entity: entity.coordinator.data.disk_usage[
             entity.argument
-        ]).percent
-        if entity.argument in entity.coordinator.data["disk_usage"]
+        ].percent
+        if entity.argument in entity.coordinator.data.disk_usage
         else None,
         none_is_unavailable=True,
         add_to_update=lambda entity: ("disks", entity.argument),
     ),
-    "ipv4_address": SysMonitorSensorEntityDescription(
-        key="ipv4_address",
-        translation_key="ipv4_address",
-        placeholder="ip_address",
-        mandatory_arg=True,
-        value_fn=get_ip_address,
-        add_to_update=lambda entity: ("addresses", ""),
-    ),
-    "ipv6_address": SysMonitorSensorEntityDescription(
-        key="ipv6_address",
-        translation_key="ipv6_address",
-        placeholder="ip_address",
-        mandatory_arg=True,
-        value_fn=get_ip_address,
-        add_to_update=lambda entity: ("addresses", ""),
-    ),
-    "last_boot": SysMonitorSensorEntityDescription(
-        key="last_boot",
-        translation_key="last_boot",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda entity: datetime.fromisoformat(entity.coordinator.data["boot_time"]),
-        add_to_update=lambda entity: ("boot", ""),
-    ),
+    # "ipv4_address": SysMonitorSensorEntityDescription(
+    #     key="ipv4_address",
+    #     translation_key="ipv4_address",
+    #     placeholder="ip_address",
+    #     mandatory_arg=True,
+    #     value_fn=get_ip_address,
+    #     add_to_update=lambda entity: ("addresses", ""),
+    # ),
+    # "ipv6_address": SysMonitorSensorEntityDescription(
+    #     key="ipv6_address",
+    #     translation_key="ipv6_address",
+    #     placeholder="ip_address",
+    #     mandatory_arg=True,
+    #     value_fn=get_ip_address,
+    #     add_to_update=lambda entity: ("addresses", ""),
+    # ),
+    # "last_boot": SysMonitorSensorEntityDescription(
+    #     key="last_boot",
+    #     translation_key="last_boot",
+    #     device_class=SensorDeviceClass.TIMESTAMP,
+    #     value_fn=lambda entity: datetime.fromisoformat(entity.coordinator.data["boot_time"]),
+    #     add_to_update=lambda entity: ("boot", ""),
+    # ),
     # "load_15m": SysMonitorSensorEntityDescription(
     #     key="load_15m",
     #     translation_key="load_15m",
@@ -240,41 +222,41 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
     #     value_fn=lambda entity: round(entity.coordinator.data.load[1], 2),
     #     add_to_update=lambda entity: ("load", ""),
     # ),
-    # "memory_free": SysMonitorSensorEntityDescription(
-    #     key="memory_free",
-    #     translation_key="memory_free",
-    #     native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
-    #     device_class=SensorDeviceClass.DATA_SIZE,
-    #     state_class=SensorStateClass.MEASUREMENT,
-    #     value_fn=lambda entity: round(
-    #         entity.coordinator.data.memory.available / 1024**2, 1
-    #     ),
-    #     add_to_update=lambda entity: ("memory", ""),
-    # ),
-    # "memory_use": SysMonitorSensorEntityDescription(
-    #     key="memory_use",
-    #     translation_key="memory_use",
-    #     native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
-    #     device_class=SensorDeviceClass.DATA_SIZE,
-    #     state_class=SensorStateClass.MEASUREMENT,
-    #     value_fn=lambda entity: round(
-    #         (
-    #             entity.coordinator.data.memory.total
-    #             - entity.coordinator.data.memory.available
-    #         )
-    #         / 1024**2,
-    #         1,
-    #     ),
-    #     add_to_update=lambda entity: ("memory", ""),
-    # ),
-    # "memory_use_percent": SysMonitorSensorEntityDescription(
-    #     key="memory_use_percent",
-    #     translation_key="memory_use_percent",
-    #     native_unit_of_measurement=PERCENTAGE,
-    #     state_class=SensorStateClass.MEASUREMENT,
-    #     value_fn=lambda entity: entity.coordinator.data.memory.percent,
-    #     add_to_update=lambda entity: ("memory", ""),
-    # ),
+    "memory_free": SysMonitorSensorEntityDescription(
+        key="memory_free",
+        translation_key="memory_free",
+        native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda entity: round(
+            entity.coordinator.data.memory.available / 1024**2, 1
+        ),
+        add_to_update=lambda entity: ("memory", ""),
+    ),
+    "memory_use": SysMonitorSensorEntityDescription(
+        key="memory_use",
+        translation_key="memory_use",
+        native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda entity: round(
+            (
+                entity.coordinator.data.memory.total
+                - entity.coordinator.data.memory.available
+            )
+            / 1024**2,
+            1,
+        ),
+        add_to_update=lambda entity: ("memory", ""),
+    ),
+    "memory_use_percent": SysMonitorSensorEntityDescription(
+        key="memory_use_percent",
+        translation_key="memory_use_percent",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda entity: entity.coordinator.data.memory.percent,
+        add_to_update=lambda entity: ("memory", ""),
+    ),
     # "network_in": SysMonitorSensorEntityDescription(
     #     key="network_in",
     #     translation_key="network_in",
