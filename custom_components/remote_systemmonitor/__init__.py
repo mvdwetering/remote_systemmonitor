@@ -83,7 +83,7 @@ async def async_setup_entry(
         _LOGGER.debug("on_new_data: %s", data)
         coordinator.async_set_updated_data(data)
 
-    collector_api._on_update_data_notification = on_new_data
+    collector_api.set_on_new_data_handler(on_new_data)
 
     # await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = SystemMonitorData(coordinator, psutil_wrapper, collector_api)
