@@ -6,6 +6,19 @@ This is basically a the [Home Assistant SystemMonitor integration](https://www.h
 
 Just monitoring, nothing else.
 
+## Known limitations
+
+No support for processes like normal System Monitor
+
+## Collector
+
+The collector can be run by just running the command below after installing the packages in `requirements_collector.txt`.
+You might need to allow your firewall to let it listen to the port (2604 by default)
+
+```
+python3 rsm_collector.py
+```
+
 ## Background
 
 I had been looking into options for monitoring my Windows fileserver (CPU load, memory and disk usage), but all options I tried had issues.
@@ -22,14 +35,3 @@ Some of those issues are:
 * I want a direct integration with Home Assistant, not through an additional MQTT server
 
 After initially trying to build something new and fancy I decided that was going to take too much time to do properly, so hacking SystemMonitor seems the easy way out.
-
-## Collector
-
-The collector can be run by just running the command below after installing the packages in `requirements_collector.txt`.
-You might need to allow your firewall to let it listen to the port (2604 by default)
-
-```
-python3 rsm_collector.py
-```
-
-
