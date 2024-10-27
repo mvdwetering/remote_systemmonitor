@@ -7,10 +7,13 @@ import argparse
 import asyncio
 import logging
 import platform
+import functools
+import machineid
 
 from websockets.asyncio.server import broadcast, serve
 
 from rsm_collector import async_setup_entry
+from rsm_collector.coordinator import SensorData
 from rsm_collector.hass_stubs import DEFAULT_SCAN_INTERVAL, ConfigEntry, HomeAssistant
 
 from myjsonrpc import JsonRpc, JsonRpcNotification
@@ -19,7 +22,7 @@ from myjsonrpc.transports.websocket_transport import WebsocketsServerTransport
 CONNECTIONS = set()
 
 
-async def myjsonrpc_handler(websocket):
+async def myjsonrpc_handler(websocket, machine_id: str, newest_data: SensorData):
     async def _on_get_api_info() -> dict:
         return {
             "version": "0.0.1",
@@ -28,6 +31,7 @@ async def myjsonrpc_handler(websocket):
 
     async def _on_get_machine_info() -> dict:
         return {
+            "id": machine_id,
             "os": platform.system(),
             "os_alias": platform.system_alias(
                 platform.system(), platform.release(), platform.version()
@@ -40,6 +44,9 @@ async def myjsonrpc_handler(websocket):
             "processor": platform.processor(),
         }
 
+    async def _on_get_latest_data() -> dict:
+        return {"data": newest_data.as_dict()}
+
     disconnected_future: asyncio.Future = asyncio.Future()
 
     async def _on_disconnect() -> None:
@@ -50,18 +57,19 @@ async def myjsonrpc_handler(websocket):
     jsonrpc = JsonRpc(transport)
     jsonrpc.register_request_handler("get_api_info", _on_get_api_info)
     jsonrpc.register_request_handler("get_machine_info", _on_get_machine_info)
+    jsonrpc.register_request_handler("get_latest_data", _on_get_latest_data)
 
     await transport.connect()
 
     await disconnected_future
 
 
-async def websocket_handler(websocket):
+async def websocket_handler(websocket, machine_id: str, newest_data: SensorData):
     CONNECTIONS.add(websocket)
 
     try:
         logging.info("New connection from %s", websocket.remote_address)
-        await myjsonrpc_handler(websocket)
+        await myjsonrpc_handler(websocket, machine_id, newest_data)
         logging.info("Connection closed from %s", websocket.remote_address)
     finally:
         CONNECTIONS.remove(websocket)
@@ -93,7 +101,21 @@ async def main(args):
     # # entry.runtime_data.coordinator.update_subscribers[("processes", "")] = "dummy"
     # entry.runtime_data.coordinator.update_subscribers[("temperatures", "")] = "dummy"
 
-    async with serve(websocket_handler, "0.0.0.0", 2604):
+    new_data: SensorData = await entry.runtime_data.coordinator._async_update_data()
+    machine_id = (
+        args.machineid
+        if args.machineid is not None
+        else machineid.hashed_id("RemoteSystemMonitorCollector")
+    )  # Don't change the app id because it would change the machine id !!!
+
+    # This binds the websocket_handler function with the machine_id and new_data arguments pre-filled.
+    # This is needed because the serve function requires a function with only one argument (websocket) but
+    # our websocket_handler has three arguments.
+    bound_websocket_handler = functools.partial(
+        websocket_handler, machine_id=machine_id, newest_data=new_data
+    )
+
+    async with serve(bound_websocket_handler, "0.0.0.0", 2604):
         while True:
             new_data = await entry.runtime_data.coordinator._async_update_data()
 
@@ -110,6 +132,11 @@ async def main(args):
 if __name__ == "__main__":
     ## Commandlineoptions
     parser = argparse.ArgumentParser(description="Remote SystemMonitor collector.")
+    parser.add_argument(
+        "--machine-id",
+        type=str,
+        help="Machine ID to use. Only intended to be used when the actual machine ID changed for some unexpected reason.",
+    )
     parser.add_argument(
         "--loglevel",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],

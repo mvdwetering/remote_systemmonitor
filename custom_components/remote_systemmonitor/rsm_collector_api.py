@@ -28,6 +28,7 @@ class ApiInfo(DataClassDictMixin):
 
 @dataclass
 class MachineInfo(DataClassDictMixin):
+    id: str
     hostname:str
     os:str
     os_alias:str
