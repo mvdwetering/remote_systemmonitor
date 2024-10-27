@@ -104,7 +104,7 @@ async def main(args):
     # entry.runtime_data.coordinator.update_subscribers[("io_counters", "")] = set("dummy")
     # entry.runtime_data.coordinator.update_subscribers[("addresses", "")] = set("dummy")
     # entry.runtime_data.coordinator.update_subscribers[("load", "")] = set("dummy")
-    # entry.runtime_data.coordinator.update_subscribers[("cpu_percent", "")] = set("dummy")
+    entry.runtime_data.coordinator.update_subscribers[("cpu_percent", "")] = set("dummy")
     ## Don't enable boot, not needed to send all the time since when rebooting collector will be restarted anyway
     # entry.runtime_data.coordinator.update_subscribers[("boot", "")] = set("dummy")
     ## I don't have a case for monitoring processes and it seems like a lot of data. Leave out for now

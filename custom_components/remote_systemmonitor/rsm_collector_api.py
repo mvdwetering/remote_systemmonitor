@@ -86,7 +86,7 @@ class SensorData:
     # io_counters: dict[str, snetio]
     # addresses: dict[str, list[snicaddr]]
     # load: tuple[float, float, float]
-    # cpu_percent: float | None
+    cpu_percent: float | None
     # boot_time: datetime
     # processes: list[Process]
     # temperatures: dict[str, list[shwtemp]]
@@ -101,7 +101,7 @@ class SensorData:
             # io_counters=data.get("io_counters"),
             # addresses=data.get("addresses"),
             # load=data.get("load"),
-            # cpu_percent=data.get("cpu_percent"),
+            cpu_percent=float(data["cpu_percent"]),
             # boot_time=data.get("boot_time"),
             # processes=data.get("processes"),
             # temperatures=data.get("temperatures"),
