@@ -17,64 +17,66 @@ from homeassistant.helpers.entity_component import DEFAULT_SCAN_INTERVAL
 from homeassistant.helpers.update_coordinator import TimestampDataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
+from custom_components.remote_systemmonitor.rsm_collector_api import SensorData
+
 _LOGGER = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
-class SensorData:
-    """Sensor data."""
+# @dataclass(frozen=True, kw_only=True, slots=True)
+# class SensorData:
+#     """Sensor data."""
 
-    disk_usage: dict[str, sdiskusage]
-    swap: sswap
-    memory: VirtualMemory
-    io_counters: dict[str, snetio]
-    addresses: dict[str, list[snicaddr]]
-    load: tuple[float, float, float]
-    cpu_percent: float | None
-    boot_time: datetime
-    processes: list[Process]
-    temperatures: dict[str, list[shwtemp]]
+#     disk_usage: dict[str, sdiskusage]
+#     swap: sswap
+#     memory: VirtualMemory
+#     io_counters: dict[str, snetio]
+#     addresses: dict[str, list[snicaddr]]
+#     load: tuple[float, float, float]
+#     cpu_percent: float | None
+#     boot_time: datetime
+#     processes: list[Process]
+#     temperatures: dict[str, list[shwtemp]]
 
-    def as_dict(self) -> dict[str, Any]:
-        """Return as dict."""
-        disk_usage = None
-        if self.disk_usage:
-            disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
-        io_counters = None
-        if self.io_counters:
-            io_counters = {k: str(v) for k, v in self.io_counters.items()}
-        addresses = None
-        if self.addresses:
-            addresses = {k: str(v) for k, v in self.addresses.items()}
-        temperatures = None
-        if self.temperatures:
-            temperatures = {k: str(v) for k, v in self.temperatures.items()}
-        return {
-            "disk_usage": disk_usage,
-            "swap": str(self.swap),
-            "memory": str(self.memory),
-            "io_counters": io_counters,
-            "addresses": addresses,
-            "load": str(self.load),
-            "cpu_percent": str(self.cpu_percent),
-            "boot_time": str(self.boot_time),
-            "processes": str(self.processes),
-            "temperatures": temperatures,
-        }
+#     def as_dict(self) -> dict[str, Any]:
+#         """Return as dict."""
+#         disk_usage = None
+#         if self.disk_usage:
+#             disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
+#         io_counters = None
+#         if self.io_counters:
+#             io_counters = {k: str(v) for k, v in self.io_counters.items()}
+#         addresses = None
+#         if self.addresses:
+#             addresses = {k: str(v) for k, v in self.addresses.items()}
+#         temperatures = None
+#         if self.temperatures:
+#             temperatures = {k: str(v) for k, v in self.temperatures.items()}
+#         return {
+#             "disk_usage": disk_usage,
+#             "swap": str(self.swap),
+#             "memory": str(self.memory),
+#             "io_counters": io_counters,
+#             "addresses": addresses,
+#             "load": str(self.load),
+#             "cpu_percent": str(self.cpu_percent),
+#             "boot_time": str(self.boot_time),
+#             "processes": str(self.processes),
+#             "temperatures": temperatures,
+#         }
 
 
-class VirtualMemory(NamedTuple):
-    """Represents virtual memory.
+# class VirtualMemory(NamedTuple):
+#     """Represents virtual memory.
 
-    psutil defines virtual memory by platform.
-    Create our own definition here to be platform independent.
-    """
+#     psutil defines virtual memory by platform.
+#     Create our own definition here to be platform independent.
+#     """
 
-    total: float
-    available: float
-    percent: float
-    used: float
-    free: float
+#     total: float
+#     available: float
+#     percent: float
+#     used: float
+#     free: float
 
 
 class SystemMonitorCoordinator(TimestampDataUpdateCoordinator[SensorData]):
