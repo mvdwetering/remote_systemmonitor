@@ -1,12 +1,16 @@
 {
   "domain": "remote_systemmonitor",
   "name": "Remote System Monitor",
-  "codeowners": ["@mvdwetering"],
+  "codeowners": [
+    "@mvdwetering"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/mvdwetering/remote_systemmonitor",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/mvdwetering/remote_systemmonitor/issues",
   "loggers": [],
-  "requirements": ["aiohttp>=3.10,<4"],
+  "requirements": [
+    "aiohttp>=3.10,<4"
+  ],
   "version": "0.0.1"
 }
