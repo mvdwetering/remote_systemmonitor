@@ -113,9 +113,7 @@ async def main(args):
     # entry.runtime_data.coordinator.update_subscribers[("temperatures", "")] = set("dummy")
 
     new_data: SensorData = await entry.runtime_data.coordinator._async_update_data()
-    # Some data like cpu_percent need 2 updates to calcuate a value, see psutil docs
-    await asyncio.sleep(0.5)  
-    new_data = await entry.runtime_data.coordinator._async_update_data()
+
     machine_id = (
         args.machine_id
         if args.machine_id is not None
