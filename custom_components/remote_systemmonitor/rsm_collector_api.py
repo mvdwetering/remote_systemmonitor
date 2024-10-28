@@ -17,30 +17,36 @@ from mashumaro.mixins.dict import DataClassDictMixin
 # Some hackery to be able to use the "internal" package
 try:
     from .myjsonrpc import JsonRpc
-    from .myjsonrpc.transports.aiohttp_websocketclient_transport import AioHttpWebsocketClientTransport
+    from .myjsonrpc.transports.aiohttp_websocketclient_transport import (
+        AioHttpWebsocketClientTransport,
+    )
 except ImportError:
     from myjsonrpc import JsonRpc
-    from myjsonrpc.transports.aiohttp_websocketclient_transport import AioHttpWebsocketClientTransport
+    from myjsonrpc.transports.aiohttp_websocketclient_transport import (
+        AioHttpWebsocketClientTransport,
+    )
 
 
 DEFAULT_PORT = 2604
 
+
 @dataclass
 class ApiInfo(DataClassDictMixin):
-    version:str
-    id:str
+    version: str
+    id: str
+
 
 @dataclass
 class MachineInfo(DataClassDictMixin):
     id: str
-    hostname:str
-    os:str
-    os_alias:str
-    version:str
-    release:str
-    platform:str
-    machine:str
-    processor:str
+    hostname: str
+    os: str
+    os_alias: str
+    version: str
+    release: str
+    platform: str
+    machine: str
+    processor: str
 
 
 class NamedTupleStringDecoder(DataClassDictMixin):
@@ -88,9 +94,11 @@ class SensorData:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> SensorData:
-        # disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
         return SensorData(
-            disk_usage={k: DiskUsage.from_named_tuple_string(v) for k, v in data["disk_usage"].items()},
+            disk_usage={
+                k: DiskUsage.from_named_tuple_string(v)
+                for k, v in data["disk_usage"].items()
+            },
             # swap=data.get("swap"),
             memory=Memory.from_named_tuple_string(data["memory"]),
             # io_counters=data.get("io_counters"),
@@ -140,13 +148,14 @@ class RemoteSystemMonitorCollectorApi:
         # TODO: Need to do something with disconnects/connection errors, probably on transport??
         self._transport = AioHttpWebsocketClientTransport()
         self._jsonrpc = JsonRpc(self._transport)
-        self._jsonrpc.register_notification_handler("update_data", self._on_update_data_notification)
+        self._jsonrpc.register_notification_handler(
+            "update_data", self._on_update_data_notification
+        )
 
     async def connect(self):
         uri = f"ws://{self.host}:{self.port}"
         await self._transport.connect(uri)
         logging.debug("Connected")
-
 
     async def disconnect(self):
         logging.debug("Disconnect")
@@ -159,9 +168,8 @@ class RemoteSystemMonitorCollectorApi:
         sensor_data = SensorData.from_dict(data)
 
         self._last_data = sensor_data
-        if self._on_new_data is not None: 
+        if self._on_new_data is not None:
             await self._on_new_data(sensor_data)
-
 
     async def get_api_info(self) -> ApiInfo:
         response = await self._jsonrpc.call_method("get_api_info")
@@ -188,11 +196,9 @@ class RemoteSystemMonitorCollectorApi:
             if response.error is not None:
                 raise Exception(f"Error: {response.error}")
 
-            self._last_data = SensorData.from_dict(response.result['data'])
+            self._last_data = SensorData.from_dict(response.result["data"])
 
         return self._last_data
-
-
 
 
 async def main(args):
