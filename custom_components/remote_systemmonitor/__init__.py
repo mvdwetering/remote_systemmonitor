@@ -58,10 +58,14 @@ async def async_setup_entry(
 
     # _LOGGER.debug("disk arguments to be added: %s", disk_arguments)
 
-    print(f"async_setup_entry RemoteSystemMonitorCollectorApi({entry.data[CONF_HOST]})")
     collector_api = RemoteSystemMonitorCollectorApi(entry.data[CONF_HOST])
     try:
-        await collector_api.connect()
+        async def on_disconnect():
+            # Reload the entry on disconnect.
+            # HA will take care of re-init and retries
+            await hass.config_entries.async_reload(entry.entry_id)
+
+        await collector_api.connect(on_disconnect=on_disconnect)
         api_info = await collector_api.get_api_info()
         _LOGGER.debug("api_info: %s", api_info)
 

@@ -16,12 +16,11 @@ class AioHttpWebsocketClientTransport:
     def register_on_receive_handler(self, handler):
         self._on_receive_handler = handler
 
-    async def connect(self, uri):
-        assert self._on_receive_handler is not None
-
+    async def connect(self, uri, on_disconnect=None):
         self._clientsession = aiohttp.ClientSession()  # TODO: Do we need to keep it or is websocket enough?
         self._websocket = await self._clientsession.ws_connect(uri)
-        self._receive_task = asyncio.create_task(self._receive_task(self._websocket))
+        self._receive_task = asyncio.create_task(self._receive_task_handler(self._websocket))
+        self._on_disconnect = on_disconnect
         logging.debug("Transport Connected")
 
     async def disconnect(self):
@@ -36,7 +35,7 @@ class AioHttpWebsocketClientTransport:
         assert self._websocket is not None
         await self._websocket.send_str(message)
 
-    async def _receive_task(self, websocket) -> None:
+    async def _receive_task_handler(self, websocket) -> None:
         while True:
             try:
                 message = await websocket.receive()
@@ -47,16 +46,18 @@ class AioHttpWebsocketClientTransport:
                 logging.debug(f"Transport receiver -- {message}")
 
                 if message.type == aiohttp.WSMsgType.CLOSE:
-                    logging.warning("Connection CLOSE initiated from the other side")
+                    logging.debug("Connection CLOSE initiated from the other side")
                     continue
                 if message.type == aiohttp.WSMsgType.CLOSED:  # This is an aiohttp specific code
-                    logging.warning("Connection CLOSED, exiting receive task!!!")
+                    logging.debug("Connection CLOSED, exiting receive task!!!")
+                    if self._on_disconnect:
+                        await self._on_disconnect()
                     return
                 if message.type == aiohttp.WSMsgType.PING:
-                    logging.warning("PING?")
+                    logging.debug("PING?")
                     continue
                 if message.type == aiohttp.WSMsgType.PONG:
-                    logging.warning("PONG?")
+                    logging.debug("PONG?")
                     continue
                 if message.type == aiohttp.WSMsgType.TEXT:
                     if self._on_receive_handler:

@@ -159,6 +159,7 @@ class RemoteSystemMonitorCollectorApi:
         self.host = host
         self.port = port
         self._on_new_data = on_new_data
+        self._on_disconnect = None
         self._last_data: SensorData | None = None
 
         # TODO: Need to do something with disconnects/connection errors, probably on transport??
@@ -168,13 +169,20 @@ class RemoteSystemMonitorCollectorApi:
             "update_data", self._on_update_data_notification
         )
 
-    async def connect(self):
+    async def _on_disconnect_handler(self):
+        if self._on_disconnect is not None:
+            await self._on_disconnect()
+
+    async def connect(self, on_disconnect=None):
         uri = f"ws://{self.host}:{self.port}"
-        await self._transport.connect(uri)
+        self._on_disconnect = on_disconnect
+        await self._transport.connect(uri, self._on_disconnect_handler)
         logging.debug("Connected")
 
     async def disconnect(self):
         logging.debug("Disconnect")
+        # Don't call disconnect handler on intended disconnects
+        self._on_disconnect = None
         await self._transport.disconnect()
 
     def set_on_new_data_handler(self, on_new_data):
