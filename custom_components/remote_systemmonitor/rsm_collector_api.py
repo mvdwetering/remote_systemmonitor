@@ -43,12 +43,16 @@ class MachineInfo(DataClassDictMixin):
     processor:str
 
 
-class NamedTupleStringDecoder:
+class NamedTupleStringDecoder(DataClassDictMixin):
+    """
+    Mixin for decoding a NamedTupleString on a DataClassDictMixin.
+    """
 
     @classmethod
     def from_named_tuple_string(cls, named_tuple_string: str):
-        matches = re.findall(r"(\w+)\s*=\s*(\d+(?:\.\d+)?)", named_tuple_string)
-        return cls(**dict(matches))
+        matches = re.findall(r"(\w+)\s*=\s*'?([^,')]+)?", named_tuple_string)
+        return cls.from_dict(dict(matches))
+
 
 @dataclass(frozen=True, kw_only=True)
 class DiskUsage(NamedTupleStringDecoder):
@@ -57,11 +61,6 @@ class DiskUsage(NamedTupleStringDecoder):
     free: int
     percent: float
 
-    def __post_init__(self):
-        object.__setattr__(self, "total", int(self.total))
-        object.__setattr__(self, "used", int(self.used))
-        object.__setattr__(self, "free", int(self.free))
-        object.__setattr__(self, "percent", float(self.percent))
 
 @dataclass(frozen=True, kw_only=True)
 class Memory(NamedTupleStringDecoder):
@@ -71,12 +70,6 @@ class Memory(NamedTupleStringDecoder):
     used: int
     free: int
 
-    def __post_init__(self):
-        object.__setattr__(self, "total", int(self.total))
-        object.__setattr__(self, "available", int(self.available))
-        object.__setattr__(self, "percent", float(self.percent))
-        object.__setattr__(self, "used", int(self.used))
-        object.__setattr__(self, "free", int(self.free))
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class SensorData:
