@@ -14,11 +14,39 @@ Missing sensors compared to normal System Monitor
 
 ## Collector
 
-The collector can be run by installing the requirements and running the script like with the commands below.
+### Installation
+
+Download the source from the releases page and extract it somewhere where you want to keep it.
+
+Create a virtual environment, activate it and install the requirements.
+
+```
+python3 -m venv venv
+```
+
+Activate the virtual environment, depends on OS and terminal
+
+```
+# Windows CMD
+venv\Scripts\activate.bat
+# Linux
+. ./venv/bin/activate
+```
+
+With the virtual environment active install the requirements.
+
+```
+(venv)> python3 -m pip install -r requirements_collector.txt
+```
+
+### Running
+
+Make sure the virtual environment is active, see above.
+
+Then run with the command below.
 You might need to allow your firewall to let it listen to the port (2604 by default)
 
 ```
-python3 -m pip install -r requirements_collector.txt
 python3 rsm_collector.py
 ```
 
