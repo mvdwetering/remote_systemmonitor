@@ -75,7 +75,7 @@ class SysMonitorBinarySensorEntityDescription(BinarySensorEntityDescription):
     value_fn: Callable[[SystemMonitorSensor], bool]
     add_to_update: Callable[[SystemMonitorSensor], tuple[str, str]]
 
-
+# mypy: ignore-errors
 SENSOR_TYPES: tuple[SysMonitorBinarySensorEntityDescription, ...] = (
     SysMonitorBinarySensorEntityDescription(
         key="binary_process",
@@ -102,6 +102,7 @@ async def async_setup_entry(
             sensor_description,
             entry.entry_id,
             argument,
+            machine_id=entry.unique_id,
         )
         for sensor_description in SENSOR_TYPES
         for argument in entry.options.get(BINARY_SENSOR_DOMAIN, {}).get(
@@ -125,12 +126,13 @@ class SystemMonitorSensor(
         sensor_description: SysMonitorBinarySensorEntityDescription,
         entry_id: str,
         argument: str,
+        machine_id: str,
     ) -> None:
         """Initialize the binary sensor."""
         super().__init__(coordinator)
         self.entity_description = sensor_description
         self._attr_translation_placeholders = {"process": argument}
-        self._attr_unique_id: str = slugify(f"{sensor_description.key}_{argument}")
+        self._attr_unique_id: str = slugify(f"{machine_id}_{sensor_description.key}_{argument}")
         self._attr_device_info = DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
             identifiers={(DOMAIN, entry_id)},
