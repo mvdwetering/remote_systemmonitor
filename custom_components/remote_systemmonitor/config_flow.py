@@ -138,13 +138,14 @@ class SystemMonitorConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     VERSION = 1
     MINOR_VERSION = 1
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(
-        config_entry: ConfigEntry,
-    ) -> SchemaOptionsFlowHandler:
-        """Get the options flow for this handler."""
-        return SchemaOptionsFlowHandler(config_entry, OPTIONS_FLOW)
+    # Disable OptionsFlow for now until we need it again
+    # @staticmethod
+    # @callback
+    # def async_get_options_flow(
+    #     config_entry: ConfigEntry,
+    # ) -> SchemaOptionsFlowHandler:
+    #     """Get the options flow for this handler."""
+    #     return SchemaOptionsFlowHandler(config_entry, OPTIONS_FLOW)
 
     def async_config_entry_title(self, options: Mapping[str, Any]) -> str:
         """Return config entry title."""
