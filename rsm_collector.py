@@ -110,7 +110,7 @@ async def main(args):
     entry.runtime_data.coordinator.update_subscribers[("boot", "")] = set("dummy")
     ## I don't have a case for monitoring processes and it seems like a lot of data. Leave out for now
     # # entry.runtime_data.coordinator.update_subscribers[("processes", "")] = set("dummy")
-    # entry.runtime_data.coordinator.update_subscribers[("temperatures", "")] = set("dummy")
+    entry.runtime_data.coordinator.update_subscribers[("temperatures", "")] = set("dummy")
 
     new_data: SensorData = await entry.runtime_data.coordinator._async_update_data()
 
