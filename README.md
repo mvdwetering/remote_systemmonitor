@@ -1,6 +1,4 @@
-# REMOTE SYSTEMMONITOR
-
-> This is still work in progress
+# Remote System Monitor
 
 This is basically a the [Home Assistant SystemMonitor integration](https://www.home-assistant.io/integrations/systemmonitor/), but with the data collector part split off so it can get data from a remote system.
 
@@ -10,9 +8,9 @@ Just monitoring, nothing else.
 
 Missing sensors compared to normal System Monitor
 
-* Processes, I don't have a usecase right now
-* Temperature, Windows and my WSL dev env have no temperatures so can't test
-* Swap, I don't have or even know the use case for it
+* Processes, I don't have a use-case right now
+* Temperature, Windows and my WSL dev env have no temperatures (would like the temps though)
+* Swap, I don't have a use-case for it
 
 ## Collector
 
@@ -23,6 +21,40 @@ You might need to allow your firewall to let it listen to the port (2604 by defa
 python3 -m pip install -r requirements_collector.txt
 python3 rsm_collector.py
 ```
+
+## Home Assistant installation
+
+### Home Assistant Community Store (HACS)
+
+*Recommended because you get notified of updates.*
+
+HACS is a 3rd party downloader for Home Assistant to easily install and update custom integrations made by the community. More information and installation instructions can be found on their site https://hacs.xyz/
+
+* Open the HACS page
+* Add this repository as a custom repo through the ⋮ menu as type "Integration"
+* Search for "Remote SystemMonitor" and click it
+* Press the Download button and wait for it to download
+* Restart Home Assistant
+
+Then install the integration as usual:
+* Go to the "Integration" page in Home Assistant (Settings > Devices & Services)
+* Press the "Add Integration" button
+* Search for "Remote SystemMonitor" and select the integration.
+* Follow the instructions
+
+### Manual
+
+* Go to the releases section and download the zip file.
+* Extract the zip
+* Copy the contents to the `custom_components` directory in your `config` directory.
+* Restart Home Assistant
+
+Then install the integration as usual:
+* Go to the "Integration" page in Home Assistant (Settings > Devices & Services)
+* Press the "Add Integration" button
+* Search for "Remote SystemMonitor" and select the integration.
+* Follow the instructions
+
 
 ## Background
 
