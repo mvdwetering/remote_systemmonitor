@@ -72,3 +72,4 @@ If the above is not feasible improve myjsonrpc.
 * Make better tests
 * Test against other implementations
 * Try to implement an HTTP based transport
+* Define an AbstractTransport to make clear what is expected of a Transport implementation
