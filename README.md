@@ -2,20 +2,25 @@
 
 > This is still work in progress
 
-This is basically a the [Home Assistant SystemMonitor integration](https://www.home-assistant.io/integrations/systemmonitor/), but split off the data collector part so it can get data from a remote system.
+This is basically a the [Home Assistant SystemMonitor integration](https://www.home-assistant.io/integrations/systemmonitor/), but with the data collector part split off so it can get data from a remote system.
 
 Just monitoring, nothing else.
 
 ## Known limitations
 
-No support for processes like normal System Monitor
+Missing sensors compared to normal System Monitor
+
+* Processes, I don't have a usecase right now
+* Temperature, Windows and my WSL dev env have no temperatures so can't test
+* Swap, I don't have or even know the use case for it
 
 ## Collector
 
-The collector can be run by just running the command below after installing the packages in `requirements_collector.txt`.
+The collector can be run by installing the requirements and running the script like with the commands below.
 You might need to allow your firewall to let it listen to the port (2604 by default)
 
 ```
+python3 -m pip install -r requirements_collector.txt
 python3 rsm_collector.py
 ```
 
@@ -35,3 +40,24 @@ Some of those issues are:
 * I want a direct integration with Home Assistant, not through an additional MQTT server
 
 After initially trying to build something new and fancy I decided that was going to take too much time to do properly, so hacking SystemMonitor seems the easy way out.
+
+## Technical debt
+
+Because of the quick-and-dirty way is it implemented there is are a lot of loose ends and hacks that would need to be resolved to get to a more maintainable state. These are just the highlights, there is more...
+
+The API is just the `json.dumps(original data)` which does not work well for the named tuple data types (they become strings). Hacks have been added to decode those strings back into datatypes as workaround.
+Proper solution would be to define an API and make it serializable. This might be amost the API classes as defined in the `rsm_collector_api.py`.
+
+API documentation would be nice instead of having to read the source.
+
+Repo could be split up in separate ones for API definition, HA integration and the collector.
+
+Probably quite some commented and unused code left.
+
+No unittests :(
+
+API does not have proper exceptions on setup and connection failure detection, but somehow it kind of seems to work?
+
+The "dummy" subscriptions don't seem to work properly. There is a `set('y', 'm', 'd', 'u')` instead, but it works...
+
+Actually the subscriptions are just hacked to be always enabled. This could be improved by either getting rid of them completely or have a way that clients can subscribe for the stuff they are interested in and the collector would then only collect data that is asked for. Not sure if that would be worth the effort and the amount of resources it would save.
