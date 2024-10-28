@@ -101,7 +101,7 @@ async def main(args):
     # Subscribe all / most data for updates
     entry.runtime_data.coordinator.update_subscribers[("swap", "")] = set("dummy")
     entry.runtime_data.coordinator.update_subscribers[("memory", "")] = set("dummy")
-    # entry.runtime_data.coordinator.update_subscribers[("io_counters", "")] = set("dummy")
+    entry.runtime_data.coordinator.update_subscribers[("io_counters", "")] = set("dummy")
     # entry.runtime_data.coordinator.update_subscribers[("addresses", "")] = set("dummy")
     entry.runtime_data.coordinator.update_subscribers[("load", "")] = set("dummy")
     entry.runtime_data.coordinator.update_subscribers[("cpu_percent", "")] = set("dummy")

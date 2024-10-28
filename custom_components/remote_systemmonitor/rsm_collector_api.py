@@ -77,6 +77,18 @@ class Memory(NamedTupleStringDecoder):
     free: int
 
 
+@dataclass(frozen=True, kw_only=True)
+class SNetIo(NamedTupleStringDecoder):
+    bytes_sent: int
+    bytes_recv: int
+    packets_sent: int
+    packets_recv: int
+    errin: int
+    errout: int
+    dropin: int
+    dropout: int
+
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class SensorData:
     """Sensor data."""
@@ -84,7 +96,7 @@ class SensorData:
     disk_usage: dict[str, Any]
     # swap: sswap
     memory: Memory
-    # io_counters: dict[str, snetio]
+    io_counters: dict[str, SNetIo]
     # addresses: dict[str, list[snicaddr]]
     load: tuple[float, float, float]
     cpu_percent: float | None
@@ -101,7 +113,10 @@ class SensorData:
             },
             # swap=data.get("swap"),
             memory=Memory.from_named_tuple_string(data["memory"]),
-            # io_counters=data.get("io_counters"),
+            io_counters={
+                k: SNetIo.from_named_tuple_string(v)
+                for k, v in data["io_counters"].items()
+            },
             # addresses=data.get("addresses"),
             load=ast.literal_eval(data["load"]),
             cpu_percent=data.get("cpu_percent"),
@@ -110,32 +125,33 @@ class SensorData:
             # temperatures=data.get("temperatures"),
         )
 
-    def as_dict(self) -> dict[str, Any]:
-        """Return as dict."""
-        disk_usage = None
-        if self.disk_usage:
-            disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
-        # io_counters = None
-        # if self.io_counters:
-        #     io_counters = {k: str(v) for k, v in self.io_counters.items()}
-        # addresses = None
-        # if self.addresses:
-        #     addresses = {k: str(v) for k, v in self.addresses.items()}
-        # temperatures = None
-        # if self.temperatures:
-        #     temperatures = {k: str(v) for k, v in self.temperatures.items()}
-        return {
-            "disk_usage": disk_usage,
-            # "swap": str(self.swap),
-            "memory": str(self.memory),
-            # "io_counters": io_counters,
-            # "addresses": addresses,
-            "load": str(self.load),
-            "cpu_percent": self.cpu_percent,  # Why did this have str(self.cpu_percent) ??
-            "boot_time": str(self.boot_time),
-            # "processes": str(self.processes),
-            # "temperatures": temperatures,
-        }
+    # TODO: IS THIS USED??
+    # def as_dict(self) -> dict[str, Any]:
+    #     """Return as dict."""
+    #     disk_usage = None
+    #     if self.disk_usage:
+    #         disk_usage = {k: str(v) for k, v in self.disk_usage.items()}
+    #     # io_counters = None
+    #     # if self.io_counters:
+    #     #     io_counters = {k: str(v) for k, v in self.io_counters.items()}
+    #     # addresses = None
+    #     # if self.addresses:
+    #     #     addresses = {k: str(v) for k, v in self.addresses.items()}
+    #     # temperatures = None
+    #     # if self.temperatures:
+    #     #     temperatures = {k: str(v) for k, v in self.temperatures.items()}
+    #     return {
+    #         "disk_usage": disk_usage,
+    #         # "swap": str(self.swap),
+    #         "memory": str(self.memory),
+    #         # "io_counters": io_counters,
+    #         # "addresses": addresses,
+    #         "load": str(self.load),
+    #         "cpu_percent": self.cpu_percent,  # Why did this have str(self.cpu_percent) ??
+    #         "boot_time": str(self.boot_time),
+    #         # "processes": str(self.processes),
+    #         # "temperatures": temperatures,
+    #     }
 
 
 class RemoteSystemMonitorCollectorApi:

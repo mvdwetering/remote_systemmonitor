@@ -67,7 +67,8 @@ def get_network(entity: SystemMonitorSensor) -> float | None:
     """Return network in and out."""
     counters = entity.coordinator.data.io_counters
     if entity.argument in counters:
-        counter = counters[entity.argument][IO_COUNTER[entity.entity_description.key]]
+        # counter = counters[entity.argument][IO_COUNTER[entity.entity_description.key]]
+        counter = getattr(counters[entity.argument], IO_COUNTER[entity.entity_description.key])
         return round(counter / 1024**2, 1)
     return None
 
@@ -76,7 +77,8 @@ def get_packets(entity: SystemMonitorSensor) -> float | None:
     """Return packets in and out."""
     counters = entity.coordinator.data.io_counters
     if entity.argument in counters:
-        return counters[entity.argument][IO_COUNTER[entity.entity_description.key]]
+        # return counters[entity.argument][IO_COUNTER[entity.entity_description.key]]
+        return getattr(counters[entity.argument], IO_COUNTER[entity.entity_description.key])
     return None
 
 
@@ -85,7 +87,8 @@ def get_throughput(entity: SystemMonitorSensor) -> float | None:
     counters = entity.coordinator.data.io_counters
     state = None
     if entity.argument in counters:
-        counter = counters[entity.argument][IO_COUNTER[entity.entity_description.key]]
+        # counter = counters[entity.argument][IO_COUNTER[entity.entity_description.key]]
+        counter = getattr(counters[entity.argument], IO_COUNTER[entity.entity_description.key])
         now = time.monotonic()
         if (
             (value := entity.value)
@@ -257,68 +260,68 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
         value_fn=lambda entity: entity.coordinator.data.memory.percent,
         add_to_update=lambda entity: ("memory", ""),
     ),
-    # "network_in": SysMonitorSensorEntityDescription(
-    #     key="network_in",
-    #     translation_key="network_in",
-    #     placeholder="interface",
-    #     native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
-    #     device_class=SensorDeviceClass.DATA_SIZE,
-    #     state_class=SensorStateClass.TOTAL_INCREASING,
-    #     mandatory_arg=True,
-    #     value_fn=get_network,
-    #     add_to_update=lambda entity: ("io_counters", ""),
-    # ),
-    # "network_out": SysMonitorSensorEntityDescription(
-    #     key="network_out",
-    #     translation_key="network_out",
-    #     placeholder="interface",
-    #     native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
-    #     device_class=SensorDeviceClass.DATA_SIZE,
-    #     state_class=SensorStateClass.TOTAL_INCREASING,
-    #     mandatory_arg=True,
-    #     value_fn=get_network,
-    #     add_to_update=lambda entity: ("io_counters", ""),
-    # ),
-    # "packets_in": SysMonitorSensorEntityDescription(
-    #     key="packets_in",
-    #     translation_key="packets_in",
-    #     placeholder="interface",
-    #     state_class=SensorStateClass.TOTAL_INCREASING,
-    #     mandatory_arg=True,
-    #     value_fn=get_packets,
-    #     add_to_update=lambda entity: ("io_counters", ""),
-    # ),
-    # "packets_out": SysMonitorSensorEntityDescription(
-    #     key="packets_out",
-    #     translation_key="packets_out",
-    #     placeholder="interface",
-    #     state_class=SensorStateClass.TOTAL_INCREASING,
-    #     mandatory_arg=True,
-    #     value_fn=get_packets,
-    #     add_to_update=lambda entity: ("io_counters", ""),
-    # ),
-    # "throughput_network_in": SysMonitorSensorEntityDescription(
-    #     key="throughput_network_in",
-    #     translation_key="throughput_network_in",
-    #     placeholder="interface",
-    #     native_unit_of_measurement=UnitOfDataRate.MEGABYTES_PER_SECOND,
-    #     device_class=SensorDeviceClass.DATA_RATE,
-    #     state_class=SensorStateClass.MEASUREMENT,
-    #     mandatory_arg=True,
-    #     value_fn=get_throughput,
-    #     add_to_update=lambda entity: ("io_counters", ""),
-    # ),
-    # "throughput_network_out": SysMonitorSensorEntityDescription(
-    #     key="throughput_network_out",
-    #     translation_key="throughput_network_out",
-    #     placeholder="interface",
-    #     native_unit_of_measurement=UnitOfDataRate.MEGABYTES_PER_SECOND,
-    #     device_class=SensorDeviceClass.DATA_RATE,
-    #     state_class=SensorStateClass.MEASUREMENT,
-    #     mandatory_arg=True,
-    #     value_fn=get_throughput,
-    #     add_to_update=lambda entity: ("io_counters", ""),
-    # ),
+    "network_in": SysMonitorSensorEntityDescription(
+        key="network_in",
+        translation_key="network_in",
+        placeholder="interface",
+        native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        mandatory_arg=True,
+        value_fn=get_network,
+        add_to_update=lambda entity: ("io_counters", ""),
+    ),
+    "network_out": SysMonitorSensorEntityDescription(
+        key="network_out",
+        translation_key="network_out",
+        placeholder="interface",
+        native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        mandatory_arg=True,
+        value_fn=get_network,
+        add_to_update=lambda entity: ("io_counters", ""),
+    ),
+    "packets_in": SysMonitorSensorEntityDescription(
+        key="packets_in",
+        translation_key="packets_in",
+        placeholder="interface",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        mandatory_arg=True,
+        value_fn=get_packets,
+        add_to_update=lambda entity: ("io_counters", ""),
+    ),
+    "packets_out": SysMonitorSensorEntityDescription(
+        key="packets_out",
+        translation_key="packets_out",
+        placeholder="interface",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        mandatory_arg=True,
+        value_fn=get_packets,
+        add_to_update=lambda entity: ("io_counters", ""),
+    ),
+    "throughput_network_in": SysMonitorSensorEntityDescription(
+        key="throughput_network_in",
+        translation_key="throughput_network_in",
+        placeholder="interface",
+        native_unit_of_measurement=UnitOfDataRate.MEGABYTES_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
+        state_class=SensorStateClass.MEASUREMENT,
+        mandatory_arg=True,
+        value_fn=get_throughput,
+        add_to_update=lambda entity: ("io_counters", ""),
+    ),
+    "throughput_network_out": SysMonitorSensorEntityDescription(
+        key="throughput_network_out",
+        translation_key="throughput_network_out",
+        placeholder="interface",
+        native_unit_of_measurement=UnitOfDataRate.MEGABYTES_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
+        state_class=SensorStateClass.MEASUREMENT,
+        mandatory_arg=True,
+        value_fn=get_throughput,
+        add_to_update=lambda entity: ("io_counters", ""),
+    ),
     "processor_use": SysMonitorSensorEntityDescription(
         key="processor_use",
         translation_key="processor_use",
@@ -385,12 +388,12 @@ SENSOR_TYPES: dict[str, SysMonitorSensorEntityDescription] = {
 
 
 IO_COUNTER = {
-    "network_out": 0,
-    "network_in": 1,
-    "packets_out": 2,
-    "packets_in": 3,
-    "throughput_network_out": 0,
-    "throughput_network_in": 1,
+    "network_out": "bytes_sent",
+    "network_in": "bytes_recv",
+    "packets_out": "packets_sent",
+    "packets_in": "packets_recv",
+    "throughput_network_out": "bytes_sent",
+    "throughput_network_in": "bytes_recv",
 }
 IF_ADDRS_FAMILY = {"ipv4_address": socket.AF_INET, "ipv6_address": socket.AF_INET6}
 

@@ -30,7 +30,15 @@ def get_all_network_interfaces(
     hass: HomeAssistant, coordinator: SystemMonitorCoordinator
 ) -> set[str]:
     """Return all network interfaces on system."""
+    # Note that this is taking interfaces from iocounters, could also take from addresses?
+    # TODO: Figure out if one is better
+
     interfaces: set[str] = set()
+    for interface in  coordinator.data.io_counters.keys():
+        if interface.startswith("veth"):
+            # Don't load docker virtual network interfaces
+            continue
+        interfaces.add(interface)
     _LOGGER.debug("Adding interfaces: %s", ", ".join(interfaces))
     return interfaces
 
