@@ -8,5 +8,5 @@
   "issue_tracker": "https://github.com/mvdwetering/remote_systemmonitor/issues",
   "loggers": [],
   "requirements": ["aiohttp>=3.10,<4"],
-  "version": "0.0.1"
+  "version": "0.0.0"
 }
