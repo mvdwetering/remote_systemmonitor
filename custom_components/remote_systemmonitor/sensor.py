@@ -410,6 +410,7 @@ async def async_setup_entry(
     coordinator = entry.runtime_data.coordinator
     psutil_wrapper = entry.runtime_data.psutil_wrapper
     sensor_data = coordinator.data
+    machine_id = entry.unique_id
 
     def get_arguments() -> dict[str, Any]:
         """Return startup information."""
@@ -440,6 +441,7 @@ async def async_setup_entry(
                         sensor_description,
                         entry.entry_id,
                         argument,
+                        machine_id,
                         # is_enabled,
                     )
                 )
@@ -457,6 +459,7 @@ async def async_setup_entry(
                         sensor_description,
                         entry.entry_id,
                         argument,
+                        machine_id,
                         # is_enabled,
                     )
                 )
@@ -472,6 +475,7 @@ async def async_setup_entry(
                     sensor_description,
                     entry.entry_id,
                     argument,
+                    machine_id,
                     # is_enabled,
                 )
             )
@@ -487,6 +491,7 @@ async def async_setup_entry(
                     sensor_description,
                     entry.entry_id,
                     argument,
+                    machine_id,
                     # is_enabled,
                 )
             )
@@ -502,6 +507,7 @@ async def async_setup_entry(
                     sensor_description,
                     entry.entry_id,
                     argument,
+                    machine_id,
                     # is_enabled,
                 )
             )
@@ -518,6 +524,7 @@ async def async_setup_entry(
                         sensor_description,
                         entry.entry_id,
                         argument,
+                        machine_id,
                         # is_enabled,
                     )
                 )
@@ -533,6 +540,7 @@ async def async_setup_entry(
                     sensor_description,
                     entry.entry_id,
                     argument,
+                    machine_id,
                     # is_enabled,
                 )
             )
@@ -551,6 +559,7 @@ async def async_setup_entry(
                     sensor_description,
                     entry.entry_id,
                     argument,
+                    machine_id,
                     # is_enabled,
                 )
             )
@@ -566,6 +575,7 @@ async def async_setup_entry(
                     sensor_description,
                     entry.entry_id,
                     argument,
+                    machine_id,
                     # is_enabled,
                 )
             )
@@ -634,6 +644,7 @@ class SystemMonitorSensor(CoordinatorEntity[SystemMonitorCoordinator], SensorEnt
         sensor_description: SysMonitorSensorEntityDescription,
         entry_id: str,
         argument: str,
+        machine_id: str,
         legacy_enabled: bool = False,
     ) -> None:
         """Initialize the sensor."""
@@ -643,7 +654,7 @@ class SystemMonitorSensor(CoordinatorEntity[SystemMonitorCoordinator], SensorEnt
             self._attr_translation_placeholders = {
                 self.entity_description.placeholder: argument
             }
-        self._attr_unique_id: str = slugify(f"{sensor_description.key}_{argument}")
+        self._attr_unique_id: str = slugify(f"{machine_id}_{sensor_description.key}_{argument}")
         self._attr_entity_registry_enabled_default = legacy_enabled
         self._attr_device_info = DeviceInfo(
             entry_type=DeviceEntryType.SERVICE,
