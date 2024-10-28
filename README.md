@@ -48,7 +48,7 @@ Because of the quick-and-dirty way is it implemented there is are a lot of loose
 The API is just the `json.dumps(original data)` which does not work well for the named tuple data types (they become strings). Hacks have been added to decode those strings back into datatypes as workaround.
 Proper solution would be to define an API and make it serializable. This might be amost the API classes as defined in the `rsm_collector_api.py`.
 
-API documentation would be nice instead of having to read the source.
+API documentation would be nice instead of having to read the source. Or even a real spec (OpenApi or OpenRPC) with validators and all.
 
 Repo could be split up in separate ones for API definition, HA integration and the collector.
 
@@ -61,3 +61,14 @@ API does not have proper exceptions on setup and connection failure detection, b
 The "dummy" subscriptions don't seem to work properly. There is a `set('y', 'm', 'd', 'u')` instead, but it works...
 
 Actually the subscriptions are just hacked to be always enabled. This could be improved by either getting rid of them completely or have a way that clients can subscribe for the stuff they are interested in and the collector would then only collect data that is asked for. Not sure if that would be worth the effort and the amount of resources it would save.
+
+Make myjsonrpc a proper package instead of the hacky symlink to share it between HA integration and collector.
+
+Myjsonrpc was built because other JSONRPC packages did not seem to support receiving notificastions from servers. Maybe recheck and if really not available try to get support in some of the existing packages. No real need to add yet another JSON RPC.
+
+If the above is not feasible improve myjsonrpc. 
+
+* The intention was to have "pure" separated `send` and `receive` calls, but receive got a return value for convenience. Probably could have solved by providing a context to allow the transport to piece things together.
+* Make better tests
+* Test against other implementations
+* Try to implement an HTTP based transport
