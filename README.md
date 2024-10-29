@@ -4,6 +4,9 @@ This is basically a the [Home Assistant SystemMonitor integration](https://www.h
 
 Just monitoring, nothing else.
 
+> Note that this is/was a quick-ish side project and I don't intend to extend it with new features. 
+> Only keep it working if changes are required in upcoming Home Assistant releases.
+
 ## Known limitations
 
 Missing sensors compared to normal System Monitor
@@ -133,3 +136,17 @@ If the above is not feasible improve myjsonrpc.
 * Test against other implementations
 * Try to implement an HTTP based transport
 * Define an AbstractTransport to make clear what is expected of a Transport implementation
+
+## Future
+
+Ideas for future someone
+
+* Make the connection encrypted. Probably easiest to use secure websockets (wss://)
+* Add access management? E.g. an API key (or per client)
+* Restructure the data. Currently it is based on how it comes out of `psutil`. Maybe organize as a component with measurements and a machine is a collection of components. That way there would be one compnent per storage device (HDD/SSD) and it would contain all measurements/capabilities for that, so usage, but also temperature if available. Components could also expose more data like manufacturere, firmware version etc...
+* Figure out and document how to run it as a Windows Service, so it runs all the time without someone needing to be logged in and start it
+* Add more data like temperatures. Maybe some high level SMART data. Manufacturer and OS version could be nice to expose on the device in Home Assistant.
+* Only send data that changed
+* Implement re-configure
+* Maybe expose "components" as devices? There was an accepted archtecture proposal for sub-devices which would fit really nicely
+* Expose Mac addresses as a connection to Home Assistant so it can link with other integrations using Mac ocnnections like routers and Wake-on-LAN
