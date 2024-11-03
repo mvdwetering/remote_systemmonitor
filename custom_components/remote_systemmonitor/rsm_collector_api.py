@@ -29,6 +29,8 @@ except ImportError:
 
 DEFAULT_PORT = 2604
 
+LOGGER = logging.getLogger(__package__)
+
 
 @dataclass
 class ApiInfo(DataClassDictMixin):
@@ -176,11 +178,16 @@ class RemoteSystemMonitorCollectorApi:
     async def connect(self, on_disconnect=None):
         uri = f"ws://{self.host}:{self.port}"
         self._on_disconnect = on_disconnect
-        await self._transport.connect(uri, self._on_disconnect_handler)
-        logging.debug("Connected")
+        try:
+            async with asyncio.timeout(5):
+                await self._transport.connect(uri, self._on_disconnect_handler)
+        except asyncio.TimeoutError:
+            LOGGER.error("Timeout connecting to %s", uri)
+            raise
+        LOGGER.debug("Connected")
 
     async def disconnect(self):
-        logging.debug("Disconnect")
+        LOGGER.debug("Disconnect")
         # Don't call disconnect handler on intended disconnects
         self._on_disconnect = None
         await self._transport.disconnect()
