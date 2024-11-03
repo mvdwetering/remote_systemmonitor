@@ -1,28 +1,91 @@
-# REMOTE SYSTEMMONITOR
-
-> This is still work in progress
+# Remote System Monitor
 
 This is basically a the [Home Assistant SystemMonitor integration](https://www.home-assistant.io/integrations/systemmonitor/), but with the data collector part split off so it can get data from a remote system.
 
 Just monitoring, nothing else.
 
+> Note that this is/was a quick-ish side project and I don't intend to extend it with new features. 
+> Only keep it working if changes are required in upcoming Home Assistant releases.
+
 ## Known limitations
 
 Missing sensors compared to normal System Monitor
 
-* Processes, I don't have a usecase right now
-* Temperature, Windows and my WSL dev env have no temperatures so can't test
-* Swap, I don't have or even know the use case for it
+* Processes, I don't have a use-case right now
+* Temperature, Windows and my WSL dev env have no temperatures (would like the temps though)
+* Swap, I don't have a use-case for it
 
 ## Collector
 
-The collector can be run by installing the requirements and running the script like with the commands below.
+### Installation
+
+Download the source from the releases page and extract it somewhere where you want to keep it.
+
+Create a virtual environment, activate it and install the requirements.
+
+```
+python3 -m venv venv
+```
+
+Activate the virtual environment, depends on OS and terminal
+
+```
+# Windows CMD
+venv\Scripts\activate.bat
+# Linux
+. ./venv/bin/activate
+```
+
+With the virtual environment active install the requirements.
+
+```
+(venv)> python3 -m pip install -r requirements_collector.txt
+```
+
+### Running
+
+Make sure the virtual environment is active, see above.
+
+Then run with the command below.
 You might need to allow your firewall to let it listen to the port (2604 by default)
 
 ```
-python3 -m pip install -r requirements_collector.txt
 python3 rsm_collector.py
 ```
+
+## Home Assistant installation
+
+### Home Assistant Community Store (HACS)
+
+*Recommended because you get notified of updates.*
+
+HACS is a 3rd party downloader for Home Assistant to easily install and update custom integrations made by the community. More information and installation instructions can be found on their site https://hacs.xyz/
+
+* Open the HACS page
+* Add this repository as a custom repo through the ⋮ menu as type "Integration"
+* Search for "Remote SystemMonitor" and click it
+* Press the Download button and wait for it to download
+* Restart Home Assistant
+
+Then install the integration as usual:
+* Go to the "Integration" page in Home Assistant (Settings > Devices & Services)
+* Press the "Add Integration" button
+* Search for "Remote SystemMonitor" and select the integration.
+* Follow the instructions
+
+### Manual
+
+* Go to the releases section and download the zip file.
+* Extract the zip
+* Copy the contents to the `custom_components` directory in your `config` directory.
+* Restart Home Assistant
+
+Then install the integration as usual:
+* Go to the "Integration" page in Home Assistant (Settings > Devices & Services)
+* Press the "Add Integration" button
+* Search for "Remote SystemMonitor" and select the integration.
+* Follow the instructions
+
 
 ## Background
 
@@ -73,3 +136,17 @@ If the above is not feasible improve myjsonrpc.
 * Test against other implementations
 * Try to implement an HTTP based transport
 * Define an AbstractTransport to make clear what is expected of a Transport implementation
+
+## Future
+
+Ideas for future someone
+
+* Make the connection encrypted. Probably easiest to use secure websockets (wss://)
+* Add access management? E.g. an API key (or per client)
+* Restructure the data. Currently it is based on how it comes out of `psutil`. Maybe organize as a component with measurements and a machine is a collection of components. That way there would be one compnent per storage device (HDD/SSD) and it would contain all measurements/capabilities for that, so usage, but also temperature if available. Components could also expose more data like manufacturere, firmware version etc...
+* Figure out and document how to run it as a Windows Service, so it runs all the time without someone needing to be logged in and start it
+* Add more data like temperatures. Maybe some high level SMART data. Manufacturer and OS version could be nice to expose on the device in Home Assistant.
+* Only send data that changed
+* Implement re-configure
+* Maybe expose "components" as devices? There was an accepted archtecture proposal for sub-devices which would fit really nicely
+* Expose Mac addresses as a connection to Home Assistant so it can link with other integrations using Mac ocnnections like routers and Wake-on-LAN
