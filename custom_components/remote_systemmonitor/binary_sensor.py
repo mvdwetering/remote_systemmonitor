@@ -134,7 +134,7 @@ class SystemMonitorSensor(
         self._attr_translation_placeholders = {"process": argument}
         self._attr_unique_id: str = slugify(f"{machine_id}_{sensor_description.key}_{argument}")
         self._attr_device_info = DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
+            # entry_type=DeviceEntryType.SERVICE,
             identifiers={(DOMAIN, entry_id)},
             # manufacturer="System Monitor",
             # name="System Monitor",
