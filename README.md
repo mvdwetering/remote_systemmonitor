@@ -68,6 +68,7 @@ HACS is a 3rd party downloader for Home Assistant to easily install and update c
 * Restart Home Assistant
 
 Then install the integration as usual:
+
 * Go to the "Integration" page in Home Assistant (Settings > Devices & Services)
 * Press the "Add Integration" button
 * Search for "Remote SystemMonitor" and select the integration.
@@ -81,11 +82,11 @@ Then install the integration as usual:
 * Restart Home Assistant
 
 Then install the integration as usual:
+
 * Go to the "Integration" page in Home Assistant (Settings > Devices & Services)
 * Press the "Add Integration" button
 * Search for "Remote SystemMonitor" and select the integration.
 * Follow the instructions
-
 
 ## Background
 
@@ -129,13 +130,11 @@ Make myjsonrpc a proper package instead of the hacky symlink to share it between
 
 Myjsonrpc was built because other JSONRPC packages did not seem to support receiving notificastions from servers. Maybe recheck and if really not available try to get support in some of the existing packages. No real need to add yet another JSON RPC.
 
-If the above is not feasible improve myjsonrpc. 
+If the above is not feasible improve myjsonrpc.
 
-* The intention was to have "pure" separated `send` and `receive` calls, but receive got a return value for convenience. Probably could have solved by providing a context to allow the transport to piece things together.
 * Make better tests
 * Test against other implementations
-* Try to implement an HTTP based transport
-* Define an AbstractTransport to make clear what is expected of a Transport implementation
+* Try to implement an HTTP based transport and see what would be needed to get that working. Current implementation probably only works on open full duplex connections, e.g. websocket. Not sure how an HTTP request would be handled because the response should be matched to the request and the transport currently does not have a way to do that. Maybe just add context to the receive and send methods? But that would require there is always a response, which is currently not the always case when there is invalid data.
 
 ## Future
 
