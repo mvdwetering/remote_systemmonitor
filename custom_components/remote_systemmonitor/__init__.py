@@ -1,13 +1,13 @@
 """The System Monitor integration."""
 
-import asyncio
+# import asyncio
 from dataclasses import dataclass
 import logging
 
 import psutil_home_assistant as ha_psutil
 
-from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR_DOMAIN
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+# from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR_DOMAIN
+# from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
