@@ -7,8 +7,10 @@ import asyncio
 import enum
 import json
 import logging
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable, Awaitable
 import uuid
+
+from .transports.transport_base import JsonRpcBaseTransport
 
 
 @enum.unique
@@ -74,7 +76,7 @@ class JsonRpcNotification:
         return json.dumps(self.to_dict())
 
     def to_dict(self):
-        message = {
+        message: dict[str, Any] = {
             "jsonrpc": "2.0",
             "method": self.method,
         }
@@ -103,11 +105,11 @@ class JsonRpcRequest(JsonRpcNotification):
 
 
 class JsonRpc:
-    def __init__(self, transport) -> None:
+    def __init__(self, transport: JsonRpcBaseTransport) -> None:
         self._transport = transport
         self._pending_method_calls: dict[str, asyncio.Future] = {}
-        self._notification_handlers: dict[str, Callable[[Any], None]] = {}
-        self._request_handlers: dict[str, Coroutine[Any, Any, Any]] = {}
+        self._notification_handlers: dict[str, Callable[..., Awaitable[None]]] = {}
+        self._request_handlers: dict[str, Callable[..., Awaitable[Any]]] = {}
 
         transport.register_on_receive_handler(self._on_receive)
 
@@ -141,7 +143,7 @@ class JsonRpc:
         notification_handler = self._notification_handlers.get(method, None)
         if notification_handler is None:
             logging.debug("No notification handler for method: %s", method)
-            return None
+            return
 
         try:
             if isinstance(params, list):
@@ -154,7 +156,7 @@ class JsonRpc:
             logging.exception("Exception in notification handler")
 
         # No responses for notifications
-        return None
+        return
 
     async def _handle_request(self, id, method, params):
         request_handler = self._request_handlers.get(method, None)
@@ -192,42 +194,49 @@ class JsonRpc:
         logging.warning("No pending response handler for id: %s", id)
         return None
 
-    async def _on_receive(self, inbound_message: str) -> str | None:
+    async def _on_receive(self, inbound_message: str) -> None:
         logging.debug("On receive, message %s", inbound_message)
 
         try:
             message = json.loads(inbound_message)
         except json.JSONDecodeError:
             logging.warning(f"Invalid JSON message: {inbound_message}")
-
-            return str(
+            await self._transport.send(str(
                 JsonRpcResponse(
                     id=None, error=JsonRpcResponseError(JsonRpcErrorCode.PARSE_ERROR)
                 )
-            )
+            ))
+            return
 
         if isinstance(message, list):
             logging.warning(
                 "BATCH request objects not supported yet. Message is ignored"
             )
-            return None
+            return
+
+        if not isinstance(message, dict):
+            logging.warning(f"Invalid JSON-RPC message: {inbound_message}")
+            return
 
         if message.get("jsonrpc", None) != "2.0":
-            return str(
+            await self._transport.send(str(
                 JsonRpcResponse(
                     id=None,
                     error=JsonRpcResponseError(JsonRpcErrorCode.INVALID_REQUEST),
                 )
-            )
+            ))
+            return
 
         method = message.get("method", None)
         if method and not isinstance(method, str):
-            return str(
+            await self._transport.send(str(
                 JsonRpcResponse(
                     id=None,
                     error=JsonRpcResponseError(JsonRpcErrorCode.INVALID_REQUEST),
                 )
-            )
+            ))
+            return
+
         params = message.get(
             "params", None
         )  # TODO: Add more checking, params should be a dict or list
@@ -237,13 +246,14 @@ class JsonRpc:
 
         if method and id is None:
             logging.debug("Notification message received for method: %s", method)
-            response = await self._handle_notification(method, params)
-            return response
+            await self._handle_notification(method, params)
+            return
 
         if method:
             logging.debug("Request message received for method: %s", method)
-            response = await self._handle_request(id, method, params)
-            return response
+            if response := await self._handle_request(id, method, params):
+                await self._transport.send(response) 
+            return
 
         if id and (result or error):
             logging.debug(
@@ -252,16 +262,17 @@ class JsonRpc:
                 result,
                 error,
             )
-            response = await self._handle_response(id, result=result, error=error)
-            return response
+            if response := await self._handle_response(id, result=result, error=error):
+                await self._transport.send(response)
+            return
 
         logging.warning(
             "Invalid JSON-RPC message. Not a request, notification or response... : %s",
             inbound_message,
         )
-        return str(
+        await self._transport.send(str(
             JsonRpcResponse(
                 id=None,
                 error=JsonRpcResponseError(JsonRpcErrorCode.INVALID_REQUEST),
             )
-        )
+        ))

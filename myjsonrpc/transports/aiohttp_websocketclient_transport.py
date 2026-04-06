@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import asyncio
@@ -7,7 +5,9 @@ import logging
 
 import aiohttp
 
-class AioHttpWebsocketClientTransport:
+from .transport_base import JsonRpcBaseTransport
+
+class AioHttpWebsocketClientTransport(JsonRpcBaseTransport):
     def __init__(self) -> None:
         self._clientsession:aiohttp.ClientSession | None = None
         self._websocket: aiohttp.ClientWebSocketResponse | None = None
@@ -61,9 +61,7 @@ class AioHttpWebsocketClientTransport:
                     continue
                 if message.type == aiohttp.WSMsgType.TEXT:
                     if self._on_receive_handler:
-                        result = await self._on_receive_handler(message.data)
-                        if result is not None:
-                            await websocket.send_str(result)
+                        await self._on_receive_handler(message.data)
                     continue
             except Exception:
                 logging.exception("Exception in websocket receiver")

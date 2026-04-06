@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import logging
@@ -13,7 +11,6 @@ class JsonRpcDummyTransport:
     def __init__(self) -> None:
         self._on_receive_handler = None
         self.sent_messages: list[str] = []
-        self.receive_responses: list[str | None] = []
 
     def register_on_receive_handler(self, handler):
         self._on_receive_handler = handler
@@ -24,8 +21,9 @@ class JsonRpcDummyTransport:
 
     async def call_receive(self, message: str):
         if self._on_receive_handler:
-            result = await self._on_receive_handler(message)
-            self.receive_responses.append(result)
+            await self._on_receive_handler(message)
 
-    def last_received_response(self):
-        return self.receive_responses[-1]
+    def last_sent_message(self) -> str | None:
+        if self.sent_messages:
+            return self.sent_messages[-1]
+        return None

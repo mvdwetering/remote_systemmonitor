@@ -43,7 +43,7 @@ async def test_rpc_call_with_positional_parameters(
         '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "result": 19, "id": 1}',
     )
 
@@ -51,7 +51,7 @@ async def test_rpc_call_with_positional_parameters(
         '{"jsonrpc": "2.0", "method": "subtract", "params": [23, 42], "id": 2}'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "result": -19, "id": 2}',
     )
 
@@ -65,7 +65,7 @@ async def test_rpc_call_with_named_parameters(
         '{"jsonrpc": "2.0", "method": "subtract", "params": {"subtrahend": 23, "minuend": 42}, "id": 3}'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "result": 19, "id": 3}',
     )
 
@@ -73,7 +73,7 @@ async def test_rpc_call_with_named_parameters(
         '{"jsonrpc": "2.0", "method": "subtract", "params": {"minuend": 42, "subtrahend": 23}, "id": 4}'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "result": 19, "id": 4}',
     )
 
@@ -97,11 +97,11 @@ async def test_a_notification(dummy_transport, jsonrpc_with_dummy_transport):
     await dummy_transport.call_receive(
         '{"jsonrpc": "2.0", "method": "update", "params": [1,2,3,4,5]}'
     )
-    assert dummy_transport.last_received_response() is None
+    assert dummy_transport.last_sent_message() is None
     assert update_params == "1,2,3,4,5"
 
     await dummy_transport.call_receive('{"jsonrpc": "2.0", "method": "foobar"}')
-    assert dummy_transport.last_received_response() is None
+    assert dummy_transport.last_sent_message() is None
     assert foobar_called
 
 
@@ -112,7 +112,7 @@ async def test_rpc_call_of_non_existent_method(
         '{"jsonrpc": "2.0", "method": "foobar", "id": "1"}'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found"}, "id": "1"}',
     )
 
@@ -123,7 +123,7 @@ async def test_rpc_call_with_invalid_json(
         '{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}, "id": null}',
     )
 
@@ -134,7 +134,7 @@ async def test_rpc_call_with_invalid_request_object(
         '{"jsonrpc": "2.0", "method": 1, "params": "bar"}'
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": null}',
     )
 
@@ -149,7 +149,7 @@ async def test_rpc_call_batch_invalid_json(
   '''
     )
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}, "id": null}',
     )
 
@@ -159,7 +159,7 @@ async def test_rpc_call_with_empty_array(
 ):
     await dummy_transport.call_receive('[]')
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": null}',
     )
 
@@ -169,7 +169,7 @@ async def test_rpc_call_with_invalid_batch_but_not_empty(
 ):
     await dummy_transport.call_receive('[1]')
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '[{"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": null}]',
     )
 
@@ -179,7 +179,7 @@ async def test_rpc_call_with_invalid_batch(
 ):
     await dummy_transport.call_receive('[1,2,3]')
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '''[
   {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": null},
   {"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid Request"}, "id": null},
@@ -200,7 +200,7 @@ async def test_rpc_call_batch(
         {"jsonrpc": "2.0", "method": "get_data", "id": "9"} 
     ]''')
     assert_json_strings(
-        dummy_transport.last_received_response(),
+        dummy_transport.last_sent_message(),
         '''[
         {"jsonrpc": "2.0", "result": 7, "id": "1"},
         {"jsonrpc": "2.0", "result": 19, "id": "2"},
@@ -218,4 +218,4 @@ async def test_rpc_call_batch_all_notifications(
         {"jsonrpc": "2.0", "method": "notify_sum", "params": [1,2,4]},
         {"jsonrpc": "2.0", "method": "notify_hello", "params": [7]}
     ]''')
-    assert jsonrpc_with_dummy_transport.last_received_response() is None
+    assert jsonrpc_with_dummy_transport.last_sent_message() is None
