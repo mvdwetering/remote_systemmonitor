@@ -9,7 +9,6 @@ import os
 from typing import Any, NamedTuple
 
 from psutil import Process
-from psutil._common import sdiskusage, shwtemp, snetio, snicaddr, sswap
 import psutil_home_assistant as ha_psutil
 
 from homeassistant.core import HomeAssistant
