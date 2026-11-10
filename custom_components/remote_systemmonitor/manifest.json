@@ -1,4 +1,5 @@
 {
+  "categories": ["computers_network.monitoring"],
   "domain": "remote_systemmonitor",
   "name": "Remote System Monitor",
   "codeowners": ["@mvdwetering"],
